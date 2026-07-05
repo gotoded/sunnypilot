@@ -31,7 +31,7 @@ public:
   static void set_ir_power(int percentage) {}
   static void set_display_power(bool on) {}
 
-  static bool get_ssh_enabled() { return false; }
+  static bool get_ssh_enabled() { return true; }
   static void set_ssh_enabled(bool enabled) {}
 
   static bool PC() { return false; }
