@@ -1,5 +1,12 @@
 # 更新说明 / Changelog
 
+## 2025-07-07
+
+### 锁定安装环境版本
+- `pyproject.toml`: numpy 从 `"< 2.0.0"` 固定为 `"== 1.26.4"`
+- `pyproject.toml`: 新增 `opencv-python-headless == 4.8.1.78` 依赖
+- 安装命令：`python -m ensurepip --upgrade && python -m pip install --upgrade pip && pip install numpy==1.26.4 opencv-python-headless==4.8.1.78`
+
 ## 2025-07-06
 
 ### 用 MM-X/sunnypilot-pc master-rk3588 覆盖本地仓库
