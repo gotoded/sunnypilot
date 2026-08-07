@@ -54,8 +54,8 @@ protected:
     {cereal::DeviceState::NetworkType::CELL5_G, tr("5G")}
   };
 
-  const QRect home_btn = QRect(22, 318, 66, 66);
-  const QRect settings_btn = QRect(18, 13, 74, 43);
+  const QRect home_btn = QRect(28, 455, 84, 84);
+  const QRect settings_btn = QRect(23, 19, 95, 61);
   const QColor good_color = QColor(255, 255, 255);
   const QColor warning_color = QColor(218, 202, 37);
   const QColor danger_color = QColor(201, 34, 49);

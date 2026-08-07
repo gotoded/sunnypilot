@@ -15,7 +15,7 @@ VehiclePanel::VehiclePanel(QWidget *parent) : QFrame(parent) {
 
   vehicleScreen = new QWidget(this);
   QVBoxLayout *vlayout = new QVBoxLayout(vehicleScreen);
-  vlayout->setContentsMargins(18, 7, 18, 7);
+  vlayout->setContentsMargins(23, 10, 23, 10);
 
   platformSelector = new PlatformSelector();
   list->addItem(platformSelector);

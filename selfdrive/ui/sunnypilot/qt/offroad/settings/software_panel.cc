@@ -198,7 +198,7 @@ void SoftwarePanelSP::showResetParamsDialog() {
   const auto button_text = tr("Reset Calibration");
 
   QString content("<body><h2 style=\"text-align: center;\">" + tr("Driving Model Selector") + "</h2><br>"
-                  "<p style=\"text-align: center; margin: 0 128px; font-size: 50px;\">" + confirmMsg + "</p></body>");
+                  "<p style=\"text-align: center; margin: 0 164px; font-size: 64px;\">" + confirmMsg + "</p></body>");
 
   if (showConfirmationDialog(content, button_text, false)) {
     params.remove("CalibrationParams");

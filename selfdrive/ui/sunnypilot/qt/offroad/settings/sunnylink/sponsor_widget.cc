@@ -98,8 +98,8 @@ SunnylinkSponsorPopup::SunnylinkSponsorPopup(bool sponsor_pair, QWidget *parent)
 
   // text
   auto vlayout = new QVBoxLayout();
-  vlayout->setContentsMargins(31, 26, 18, 26);
-  vlayout->setSpacing(18);
+  vlayout->setContentsMargins(40, 37, 23, 37);
+  vlayout->setSpacing(23);
   hlayout->addLayout(vlayout, 1);
   {
     auto close = new QPushButton(QIcon(":/icons/close.svg"), "", this);
@@ -116,7 +116,7 @@ SunnylinkSponsorPopup::SunnylinkSponsorPopup(bool sponsor_pair, QWidget *parent)
 
     const QString titleText = sponsor_pair ? tr("Pair your GitHub account") : tr("Early Access: Become a sunnypilot Sponsor");
     const auto title = new QLabel(titleText, this);
-    title->setStyleSheet("font-size: 27px; color: black;");
+    title->setStyleSheet("font-size: 35px; color: black;");
     title->setWordWrap(true);
     vlayout->addWidget(title);
 
@@ -129,7 +129,7 @@ SunnylinkSponsorPopup::SunnylinkSponsorPopup(bool sponsor_pair, QWidget *parent)
     const auto instructionsLabel = new QLabel(instructionsHtml, this);
 
 
-    instructionsLabel->setStyleSheet("font-size: 17px; font-weight: bold; color: black;");
+    instructionsLabel->setStyleSheet("font-size: 22px; font-weight: bold; color: black;");
     instructionsLabel->setWordWrap(true);
     vlayout->addWidget(instructionsLabel);
 

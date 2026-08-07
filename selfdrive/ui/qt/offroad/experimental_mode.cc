@@ -21,7 +21,7 @@ ExperimentalModeButton::ExperimentalModeButton(QWidget *parent) : QPushButton(pa
   // go to toggles and expand experimental mode description
   connect(this, &QPushButton::clicked, [=]() { emit openSettings(toggles_settings_index, "ExperimentalMode"); });
 
-  setFixedHeight(46);
+  setFixedHeight(66);
   QHBoxLayout *main_layout = new QHBoxLayout;
   main_layout->setContentsMargins(horizontal_padding, 0, horizontal_padding, 0);
 
@@ -40,8 +40,8 @@ ExperimentalModeButton::ExperimentalModeButton(QWidget *parent) : QPushButton(pa
     }
 
     QLabel {
-      font-size: 16px;
-      font-weight: 112;
+      font-size: 20px;
+      font-weight: 143;
       text-align: left;
       font-family: JetBrainsMono;
       color: #000000;

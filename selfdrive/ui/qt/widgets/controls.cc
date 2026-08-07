@@ -12,7 +12,7 @@ AbstractControl::AbstractControl(const QString &title, const QString &desc, cons
 
   hlayout = new QHBoxLayout;
   hlayout->setMargin(0);
-  hlayout->setSpacing(7);
+  hlayout->setSpacing(9);
 
   // left icon
   icon_label = new QLabel(this);
@@ -26,8 +26,8 @@ AbstractControl::AbstractControl(const QString &title, const QString &desc, cons
 
   // title
   title_label = new QPushButton(title);
-  title_label->setFixedHeight(44);
-  title_label->setStyleSheet("font-size: 18px; font-weight: 148; text-align: left; border: none;");
+  title_label->setFixedHeight(63);
+  title_label->setStyleSheet("font-size: 23px; font-weight: 190; text-align: left; border: none;");
   hlayout->addWidget(title_label, 1);
 
   // value next to control button
@@ -41,7 +41,7 @@ AbstractControl::AbstractControl(const QString &title, const QString &desc, cons
   // description
   description = new QLabel(desc);
   description->setContentsMargins(15, 7, 15, 7);
-  description->setStyleSheet("font-size: 15px; color: grey");
+  description->setStyleSheet("font-size: 19px; color: grey");
   description->setWordWrap(true);
   description->setVisible(false);
   main_layout->addWidget(description);
@@ -73,8 +73,8 @@ ButtonControl::ButtonControl(const QString &title, const QString &text, const QS
   btn.setStyleSheet(R"(
     QPushButton {
       padding: 0;
-      border-radius: 18px;
-      font-size: 13px;
+      border-radius: 23px;
+      font-size: 17px;
       font-weight: 185;
       color: #E4E4E4;
       background-color: #393939;
@@ -86,7 +86,7 @@ ButtonControl::ButtonControl(const QString &title, const QString &text, const QS
       color: #33E4E4E4;
     }
   )");
-  btn.setFixedSize(92, 37);
+  btn.setFixedSize(118, 53);
   QObject::connect(&btn, &QPushButton::clicked, this, &ButtonControl::clicked);
   hlayout->addWidget(&btn);
 }
@@ -130,7 +130,7 @@ ParamControl::ParamControl(const QString &param, const QString &title, const QSt
 void ParamControl::toggleClicked(bool state) {
   auto do_confirm = [this]() {
     QString content("<body><h2 style=\"text-align: center;\">" + title_label->text() + "</h2><br>"
-                    "<p style=\"text-align: center; margin: 0 47px; font-size: 18px;\">" + getDescription() + "</p></body>");
+                    "<p style=\"text-align: center; margin: 0 60px; font-size: 23px;\">" + getDescription() + "</p></body>");
     return ConfirmationDialog(content, tr("Enable"), tr("Cancel"), true, this).exec();
   };
 

@@ -148,7 +148,7 @@ public:
     icon_label = new QLabel(this);
     hlayout->addWidget(icon_label);
 
-    toggle.setFixedSize(55, 37);
+    toggle.setFixedSize(70, 53);
     if (state) {
       toggle.togglePosition();
     }
@@ -220,14 +220,14 @@ class ButtonParamControlSP : public AbstractControlSP_SELECTOR {
 
 public:
   ButtonParamControlSP(const QString &param, const QString &title, const QString &desc, const QString &icon,
-                       const std::vector<QString> &button_texts, const int minimum_button_width = 111) : AbstractControlSP_SELECTOR(title, desc, icon), button_texts(button_texts) {
+                       const std::vector<QString> &button_texts, const int minimum_button_width = 142) : AbstractControlSP_SELECTOR(title, desc, icon), button_texts(button_texts) {
     const QString style = R"(
       QPushButton {
-        border-radius: 7px;
-        font-size: 18px;
-        font-weight: 166;
-        height:55px;
-        padding: 0 9 0 9;
+        border-radius: 9px;
+        font-size: 23px;
+        font-weight: 213;
+        height: 79px;
+        padding: 0 12 0 12;
         color: #FFFFFF;
       }
       QPushButton:pressed {
@@ -360,7 +360,7 @@ public:
     outer_layout.setSpacing(0);
     outer_layout.addLayout(&inner_layout);
     inner_layout.setMargin(0);
-    inner_layout.setSpacing(9); // default spacing is 25
+    inner_layout.setSpacing(12); // default spacing is 25
     outer_layout.addStretch();
   }
   inline void addItem(QWidget *w) { inner_layout.addWidget(w); }
@@ -427,12 +427,12 @@ public:
                   const MinMaxValue &range, const int per_value_change = 1) : _title(title), AbstractControlSP_SELECTOR(title, desc, icon) {
     const QString style = R"(
       QPushButton {
-        border-radius: 7px;
-        font-size: 22px;
-        font-weight: 185;
-        width: 55px;
-        height: 55px;
-        padding: -1 9 1 9;
+        border-radius: 9px;
+        font-size: 28px;
+        font-weight: 237;
+        width: 70px;
+        height: 79px;
+        padding: -1 12 1 12;
         color: #FFFFFF;
         font-weight: bold;
       }
@@ -445,7 +445,7 @@ public:
     )";
 
     label.setStyleSheet(label_enabled_style);
-    label.setFixedWidth(111);
+    label.setFixedWidth(142);
     label.setAlignment(Qt::AlignCenter);
 
     const std::vector<QString> button_texts{"－", "＋"};
@@ -545,8 +545,8 @@ private:
   bool request_update = false;
   QString _title = "";
 
-  const QString label_enabled_style = "font-size: 18px; font-weight: 166; color: #FFFFFF;";
-  const QString label_disabled_style = "font-size: 18px; font-weight: 166; color: #5C5C5C;";
+  const QString label_enabled_style = "font-size: 23px; font-weight: 213; color: #FFFFFF;";
+  const QString label_disabled_style = "font-size: 23px; font-weight: 213; color: #5C5C5C;";
 
   bool button_enabled = true;
 };
@@ -555,14 +555,14 @@ class PushButtonSP : public QPushButton {
   Q_OBJECT
 
 public:
-  PushButtonSP(const QString &text, const int minimum_button_width = 296, QWidget *parent = nullptr, const QString &param = "") : QPushButton(text, parent) {
+  PushButtonSP(const QString &text, const int minimum_button_width = 379, QWidget *parent = nullptr, const QString &param = "") : QPushButton(text, parent) {
     buttonStyle = R"(
       QPushButton {
-        border-radius: 7px;
-        font-size: 18px;
-        font-weight: 166;
-        height: 55px;
-        padding: 0 9px 0 9px;
+        border-radius: 9px;
+        font-size: 23px;
+        font-weight: 213;
+        height: 79px;
+        padding: 0 12px 0 12px;
         color: #FFFFFF;
       }
     )";
@@ -628,6 +628,6 @@ class PanelBackButton : public QPushButton {
 public:
   PanelBackButton(const QString &label = "Back", QWidget *parent = nullptr) : QPushButton(label, parent) {
     setObjectName("back_btn");
-    setFixedSize(148, 37);
+    setFixedSize(189, 53);
   }
 };

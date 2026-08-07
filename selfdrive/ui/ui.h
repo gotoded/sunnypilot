@@ -16,7 +16,7 @@
 #include "selfdrive/ui/qt/prime_state.h"
 
 const int UI_BORDER_SIZE = 30;
-const int UI_HEADER_HEIGHT = 420;
+const int UI_HEADER_HEIGHT = 600;
 
 const int UI_FREQ = 20; // Hz
 const int BACKLIGHT_OFFROAD = 50;

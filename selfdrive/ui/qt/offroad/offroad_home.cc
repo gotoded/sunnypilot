@@ -15,12 +15,12 @@
 
 OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
   QVBoxLayout* main_layout = new QVBoxLayout(this);
-  main_layout->setContentsMargins(15, 15, 15, 15);
+  main_layout->setContentsMargins(19, 21, 19, 21);
 
   // top header
   QHBoxLayout* header_layout = new QHBoxLayout();
   header_layout->setContentsMargins(0, 0, 0, 0);
-  header_layout->setSpacing(6);
+  header_layout->setSpacing(8);
 
   update_notif = new QPushButton(tr("UPDATE"));
   update_notif->setVisible(false);
@@ -40,14 +40,14 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
   main_layout->addLayout(header_layout);
 
   // main content
-  main_layout->addSpacing(9);
+  main_layout->addSpacing(13);
   center_layout = new QStackedLayout();
 
   QWidget *home_widget = new QWidget(this);
   {
     home_layout = new QHBoxLayout(home_widget);
     home_layout->setContentsMargins(0, 0, 0, 0);
-    home_layout->setSpacing(11);
+    home_layout->setSpacing(14);
 
 #ifndef SUNNYPILOT
     // left: PrimeAdWidget
@@ -76,8 +76,8 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
     QWidget* right_widget = new QWidget(this);
     QVBoxLayout* right_column = new QVBoxLayout(right_widget);
     right_column->setContentsMargins(0, 0, 0, 0);
-    right_widget->setFixedWidth(277);
-    right_column->setSpacing(11);
+    right_widget->setFixedWidth(355);
+    right_column->setSpacing(14);
 
     ExperimentalModeButton *experimental_mode = new ExperimentalModeButton(this);
     QObject::connect(experimental_mode, &ExperimentalModeButton::openSettings, this, &OffroadHome::openSettings);
@@ -113,13 +113,13 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
       background-color: black;
     }
     OffroadHome > QPushButton {
-      padding: 6px 12px;
-      border-radius: 2px;
-      font-size: 14px;
-      font-weight: 184;
+      padding: 8px 15px;
+      border-radius: 3px;
+      font-size: 18px;
+      font-weight: 236;
     }
     OffroadHome > QLabel {
-      font-size: 20px;
+      font-size: 26px;
     }
   )");
 }

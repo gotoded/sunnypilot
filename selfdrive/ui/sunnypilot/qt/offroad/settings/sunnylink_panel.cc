@@ -31,7 +31,7 @@ SunnylinkPanel::SunnylinkPanel(QWidget *parent) : QFrame(parent) {
 
   sunnylinkScreen = new QWidget(this);
   auto vlayout = new QVBoxLayout(sunnylinkScreen);
-  vlayout->setContentsMargins(18, 7, 18, 7);
+  vlayout->setContentsMargins(23, 10, 23, 10);
 
   auto *list = new ListWidget(this, false);
   QString sunnylinkEnabledBtnDesc = tr("This is the master switch, it will allow you to cutoff any sunnylink requests should you want to do that.");
@@ -107,7 +107,7 @@ SunnylinkPanel::SunnylinkPanel(QWidget *parent) : QFrame(parent) {
   });
   // Settings Restore and Settings Backup in the same horizontal space
   auto settings_layout = new QHBoxLayout;
-  settings_layout->setContentsMargins(0, 0, 0, 11);
+  settings_layout->setContentsMargins(0, 0, 0, 16);
   settings_layout->addWidget(backupSettings);
   settings_layout->addSpacing(10);
   settings_layout->addWidget(restoreSettings);

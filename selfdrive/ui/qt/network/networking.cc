@@ -17,7 +17,7 @@
 #include "selfdrive/ui/qt/widgets/scrollview.h"
 #endif
 
-static const int ICON_WIDTH = 18;
+static const int ICON_WIDTH = 23;
 
 // Networking functions
 
@@ -30,12 +30,12 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QFrame(parent) {
 
   wifiScreen = new QWidget(this);
   QVBoxLayout* vlayout = new QVBoxLayout(wifiScreen);
-  vlayout->setContentsMargins(7, 7, 7, 7);
+  vlayout->setContentsMargins(9, 10, 9, 10);
   if (show_advanced) {
     QPushButton* advancedSettings = new QPushButton(tr("Advanced"));
     advancedSettings->setObjectName("advanced_btn");
-    advancedSettings->setStyleSheet("margin-right: 11px;");
-    advancedSettings->setFixedSize(148, 37);
+    advancedSettings->setStyleSheet("margin-right: 14px;");
+    advancedSettings->setFixedSize(189, 53);
     connect(advancedSettings, &QPushButton::clicked, [=]() { main_layout->setCurrentWidget(an); });
     vlayout->addSpacing(4);
     vlayout->addWidget(advancedSettings, 0, Qt::AlignRight);
@@ -63,11 +63,11 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QFrame(parent) {
 
   setStyleSheet(R"(
     #wifiWidget > QPushButton, #back_btn, #advanced_btn {
-      font-size: 18px;
+      font-size: 23px;
       margin: 0px;
-      padding: 6px;
+      padding: 8px;
       border-width: 0;
-      border-radius: 12px;
+      border-radius: 15px;
       color: #dddddd;
       background-color: #393939;
     }
@@ -125,13 +125,13 @@ void Networking::hideEvent(QHideEvent *event) {
 AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWidget(parent), wifi(wifi) {
 
   QVBoxLayout* main_layout = new QVBoxLayout(this);
-  main_layout->setMargin(15);
-  main_layout->setSpacing(7);
+  main_layout->setMargin(19);
+  main_layout->setSpacing(9);
 
   // Back button
   QPushButton* back = new QPushButton(tr("Back"));
   back->setObjectName("back_btn");
-  back->setFixedSize(148, 37);
+  back->setFixedSize(189, 53);
   connect(back, &QPushButton::clicked, [=]() { emit backPress(); });
   main_layout->addWidget(back, 0, Qt::AlignLeft);
 
@@ -248,7 +248,7 @@ WifiUI::WifiUI(QWidget *parent, WifiManager* wifi) : QWidget(parent), wifi(wifi)
   circled_slash = QPixmap(ASSET_PATH + "img_circled_slash.svg").scaledToWidth(ICON_WIDTH, Qt::SmoothTransformation);
 
   scanningLabel = new QLabel(tr("Scanning for networks..."));
-  scanningLabel->setStyleSheet("font-size: 24px;");
+  scanningLabel->setStyleSheet("font-size: 31px;");
   main_layout->addWidget(scanningLabel, 0, Qt::AlignCenter);
 
   wifi_list_widget = new ListWidget(this);
@@ -262,34 +262,34 @@ WifiUI::WifiUI(QWidget *parent, WifiManager* wifi) : QWidget(parent), wifi(wifi)
       background-color: #8A8A8A;
     }
     #forgetBtn {
-      font-size: 12px;
+      font-size: 15px;
       font-weight: 222;
       color: #292929;
       background-color: #BDBDBD;
       border-width: 1px solid #828282;
       border-radius: 1px;
-      padding: 14px;
-      padding-bottom: 6px;
-      padding-top: 6px;
+      padding: 18px;
+      padding-bottom: 9px;
+      padding-top: 9px;
     }
     #forgetBtn:pressed {
       background-color: #828282;
     }
     #connecting {
-      font-size: 12px;
+      font-size: 15px;
       font-weight: 222;
       color: white;
       border-radius: 0;
-      padding: 10px;
-      padding-left: 16px;
-      padding-right: 16px;
+      padding: 13px;
+      padding-left: 20px;
+      padding-right: 20px;
       background-color: black;
     }
     #ssidLabel {
       text-align: left;
       border: none;
-      padding-top: 18px;
-      padding-bottom: 18px;
+      padding-top: 26px;
+      padding-bottom: 26px;
     }
     #ssidLabel:disabled {
       color: #696969;
@@ -348,8 +348,8 @@ WifiItem *WifiUI::getItem(int n) {
 
 WifiItem::WifiItem(const QString &connecting_text, const QString &forget_text, QWidget *parent) : QWidget(parent) {
   QHBoxLayout *hlayout = new QHBoxLayout(this);
-  hlayout->setContentsMargins(16, 0, 27, 0);
-  hlayout->setSpacing(18);
+  hlayout->setContentsMargins(20, 0, 35, 0);
+  hlayout->setSpacing(23);
 
   hlayout->addWidget(ssidLabel = new ElidedLabel());
   ssidLabel->setObjectName("ssidLabel");
@@ -373,7 +373,7 @@ void WifiItem::setItem(const Network &n, const QPixmap &status_icon, bool show_f
 
   ssidLabel->setText(n.ssid);
   ssidLabel->setEnabled(n.security_type != SecurityType::UNSUPPORTED);
-  ssidLabel->setFont(InterFont(20, network.connected == ConnectedType::DISCONNECTED ? QFont::Normal : QFont::Bold));
+  ssidLabel->setFont(InterFont(26, network.connected == ConnectedType::DISCONNECTED ? QFont::Normal : QFont::Bold));
 
   connecting->setVisible(n.connected == ConnectedType::CONNECTING);
   forgetBtn->setVisible(show_forget_btn);

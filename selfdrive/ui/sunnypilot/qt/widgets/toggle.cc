@@ -10,11 +10,11 @@
 #include <QPainter>
 
 ToggleSP::ToggleSP(QWidget *parent) : Toggle(parent) {
-  _height_rect = 30;
+  _height_rect = 38;
 }
 
 void ToggleSP::paintEvent(QPaintEvent *e) {
-  this->setFixedHeight(37);
+  this->setFixedHeight(53);
   QPainter p(this);
   p.setPen(Qt::NoPen);
   p.setRenderHint(QPainter::Antialiasing, true);

@@ -12,7 +12,7 @@
 RecordButton::RecordButton(QWidget *parent) : QPushButton(parent) {
   setCheckable(true);
   setChecked(false);
-  setFixedSize(55, 55);
+  setFixedSize(70, 70);
 
   QObject::connect(this, &QPushButton::toggled, [=]() {
     setEnabled(false);
@@ -38,15 +38,15 @@ void RecordButton::paintEvent(QPaintEvent *event) {
 
   p.setPen(Qt::NoPen);
   p.setBrush(bg);
-  p.drawEllipse(center, 27, 27);
+  p.drawEllipse(center, 35, 35);
 
   p.setPen(QPen(accent, 2));
   p.setBrush(Qt::NoBrush);
-  p.drawEllipse(center, 16, 16);
+  p.drawEllipse(center, 20, 20);
 
   p.setPen(Qt::NoPen);
   p.setBrush(accent);
-  p.drawEllipse(center, 8, 8);
+  p.drawEllipse(center, 10, 10);
 }
 
 
@@ -56,7 +56,7 @@ BodyWindow::BodyWindow(QWidget *parent) : fuel_filter(1.0, 5., 1. / UI_FREQ), QW
 
   QWidget *w = new QWidget;
   QVBoxLayout *vlayout = new QVBoxLayout(w);
-  vlayout->setMargin(17);
+  vlayout->setMargin(22);
   layout->addWidget(w);
 
   // face
@@ -88,23 +88,23 @@ void BodyWindow::paintEvent(QPaintEvent *event) {
   p.fillRect(rect(), QColor(0, 0, 0));
 
   // battery outline + detail
-  p.translate(width() - 50, 6);
+  p.translate(width() - 64, 9);
   const QColor gray = QColor("#737373");
   p.setBrush(Qt::NoBrush);
   p.setPen(QPen(gray, 2, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
-  p.drawRoundedRect(1, 1, 29, 13, 3, 3);
+  p.drawRoundedRect(1, 1, 37, 19, 4, 4);
 
   p.setPen(Qt::NoPen);
   p.setBrush(gray);
-  p.drawRoundedRect(31, 4, 2, 6, 2, 2);
-  p.drawRect(31, 4, 1, 6);
+  p.drawRoundedRect(40, 6, 3, 9, 3, 3);
+  p.drawRect(40, 6, 1, 9);
 
   // battery level
   double fuel = std::clamp(fuel_filter.x(), 0.2f, 1.0f);
   const int m = 2; // manual margin since we can't do an inner border
   p.setPen(Qt::NoPen);
   p.setBrush(fuel > 0.25 ? QColor("#32D74B") : QColor("#FF453A"));
-  p.drawRoundedRect(1 + m, 1 + m, (29- 2*m)*fuel, 13 - 2*m, 2, 2);
+  p.drawRoundedRect(1 + m, 1 + m, (37 - 2*m)*fuel, 19 - 2*m, 3, 3);
 
   // charging status
   if (charging) {
@@ -118,7 +118,7 @@ void BodyWindow::paintEvent(QPaintEvent *event) {
       QPointF(6.15, 23.08),
       QPointF(0, 23.08),
     });
-    p.drawPolygon(charger.translated(98, 0));
+    p.drawPolygon(charger.translated(125, 0));
   }
 }
 

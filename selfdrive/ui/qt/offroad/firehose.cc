@@ -18,23 +18,23 @@
 
 FirehosePanel::FirehosePanel(SettingsWindow *parent) : QWidget((QWidget*)parent) {
   layout = new QVBoxLayout(this);
-  layout->setContentsMargins(15, 15, 15, 15);
-  layout->setSpacing(7);
+  layout->setContentsMargins(19, 21, 19, 21);
+  layout->setSpacing(9);
 
   // header
   QLabel *title = new QLabel(tr("🔥 Firehose Mode 🔥"));
-  title->setStyleSheet("font-size: 37px; font-weight: 185; font-family: 'Noto Color Emoji';");
+  title->setStyleSheet("font-size: 47px; font-weight: 237; font-family: 'Noto Color Emoji';");
   layout->addWidget(title, 0, Qt::AlignCenter);
 
   // Create a container for the content
   QFrame *content = new QFrame();
-  content->setStyleSheet("background-color: #292929; border-radius: 6px; padding: 8px;");
+  content->setStyleSheet("background-color: #292929; border-radius: 8px; padding: 10px;");
   QVBoxLayout *content_layout = new QVBoxLayout(content);
-  content_layout->setSpacing(7);
+  content_layout->setSpacing(9);
 
   // Top description
   QLabel *description = new QLabel(tr("openpilot learns to drive by watching humans, like you, drive.\n\nFirehose Mode allows you to maximize your training data uploads to improve openpilot's driving models. More data means bigger models, which means better Experimental Mode."));
-  description->setStyleSheet("font-size: 16px; padding-bottom: 8px;");
+  description->setStyleSheet("font-size: 20px; padding-bottom: 11px;");
   description->setWordWrap(true);
   content_layout->addWidget(description);
 
@@ -42,16 +42,16 @@ FirehosePanel::FirehosePanel(SettingsWindow *parent) : QWidget((QWidget*)parent)
   QFrame *line = new QFrame();
   line->setFrameShape(QFrame::HLine);
   line->setFrameShadow(QFrame::Sunken);
-  line->setStyleSheet("background-color: #444444; margin-top: 2px; margin-bottom: 2px;");
+  line->setStyleSheet("background-color: #444444; margin-top: 3px; margin-bottom: 3px;");
   content_layout->addWidget(line);
 
   toggle_label = new QLabel(tr("Firehose Mode: ACTIVE"));
-  toggle_label->setStyleSheet("font-size: 22px; font-weight: bold; color: white;");
+  toggle_label->setStyleSheet("font-size: 28px; font-weight: bold; color: white;");
   content_layout->addWidget(toggle_label);
 
   // Add contribution label
   contribution_label = new QLabel();
-  contribution_label->setStyleSheet("font-size: 20px; margin-top: 4x; margin-bottom: 4px;");
+  contribution_label->setStyleSheet("font-size: 26px; margin-top: 6px; margin-bottom: 6px;");
   contribution_label->setWordWrap(true);
   contribution_label->hide();
   content_layout->addWidget(contribution_label);
@@ -60,7 +60,7 @@ FirehosePanel::FirehosePanel(SettingsWindow *parent) : QWidget((QWidget*)parent)
   QFrame *line2 = new QFrame();
   line2->setFrameShape(QFrame::HLine);
   line2->setFrameShadow(QFrame::Sunken);
-  line2->setStyleSheet("background-color: #444444; margin-top: 4px; margin-bottom: 4px;");
+  line2->setStyleSheet("background-color: #444444; margin-top: 6px; margin-bottom: 6px;");
   content_layout->addWidget(line2);
 
   // Detailed instructions at the bottom
@@ -75,7 +75,7 @@ FirehosePanel::FirehosePanel(SettingsWindow *parent) : QWidget((QWidget*)parent)
     "<i>What's a good USB-C adapter?</i> Any fast phone or laptop charger should be fine.<br><br>"
     "<i>Does it matter which software I run?</i> Yes, only upstream openpilot (and particular forks) are able to be used for training."
   ));
-  detailed_instructions->setStyleSheet("font-size: 14px; color: #E4E4E4;");
+  detailed_instructions->setStyleSheet("font-size: 18px; color: #E4E4E4;");
   detailed_instructions->setWordWrap(true);
   content_layout->addWidget(detailed_instructions);
 
@@ -106,9 +106,9 @@ void FirehosePanel::refresh() {
   bool is_active = !networkMetered && (networkType != cereal::DeviceState::NetworkType::NONE);
   if (is_active) {
     toggle_label->setText(tr("ACTIVE"));
-    toggle_label->setStyleSheet("font-size: 22px; font-weight: bold; color: #2ecc71;");
+    toggle_label->setStyleSheet("font-size: 28px; font-weight: bold; color: #2ecc71;");
   } else {
-    toggle_label->setText(tr("<span stylesheet='font-size: 22px; font-weight: bold; color: #e74c3c;'>INACTIVE</span>: connect to unmetered network"));
-    toggle_label->setStyleSheet("font-size: 22px;");
+    toggle_label->setText(tr("<span stylesheet='font-size: 28px; font-weight: bold; color: #e74c3c;'>INACTIVE</span>: connect to unmetered network"));
+    toggle_label->setStyleSheet("font-size: 28px;");
   }
 }

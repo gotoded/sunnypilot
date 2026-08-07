@@ -54,7 +54,7 @@ void TrackWidget::paintEvent(QPaintEvent *event) {
 Spinner::Spinner(QWidget *parent) : QWidget(parent) {
   QGridLayout *main_layout = new QGridLayout(this);
   main_layout->setSpacing(0);
-  main_layout->setMargin(74);
+  main_layout->setMargin(106);
 
   main_layout->addWidget(new TrackWidget(this), 0, 0, Qt::AlignHCenter | Qt::AlignVCenter);
 
@@ -77,7 +77,7 @@ Spinner::Spinner(QWidget *parent) : QWidget(parent) {
     }
     QLabel {
       color: white;
-      font-size: 30px;
+      font-size: 38px;
       background-color: transparent;
     }
     QProgressBar {

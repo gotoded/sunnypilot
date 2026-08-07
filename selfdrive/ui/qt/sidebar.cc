@@ -5,23 +5,23 @@
 #include "selfdrive/ui/qt/util.h"
 
 void Sidebar::drawMetric(QPainter &p, const QPair<QString, QString> &label, QColor c, int y) {
-  const QRect rect = {11, y, 89, 47};
+  const QRect rect = {14, y, 114, 67};
 
   p.setPen(Qt::NoPen);
   p.setBrush(QBrush(c));
-  p.setClipRect(rect.x() + 2, rect.y(), 7, rect.height(), Qt::ClipOperation::ReplaceClip);
-  p.drawRoundedRect(QRect(rect.x() + 2, rect.y() + 2, 37, 44), 7, 7);
+  p.setClipRect(rect.x() + 3, rect.y(), 9, rect.height(), Qt::ClipOperation::ReplaceClip);
+  p.drawRoundedRect(QRect(rect.x() + 3, rect.y() + 3, 47, 63), 9, 9);
   p.setClipping(false);
 
   QPen pen = QPen(QColor(0xff, 0xff, 0xff, 0x55));
   pen.setWidth(1);
   p.setPen(pen);
   p.setBrush(Qt::NoBrush);
-  p.drawRoundedRect(rect, 7, 7);
+  p.drawRoundedRect(rect, 9, 9);
 
   p.setPen(QColor(0xff, 0xff, 0xff));
-  p.setFont(InterFont(13, QFont::DemiBold));
-  p.drawText(rect.adjusted(8, 0, 0, 0), Qt::AlignCenter, label.first + "\n" + label.second);
+  p.setFont(InterFont(17, QFont::DemiBold));
+  p.drawText(rect.adjusted(10, 0, 0, 0), Qt::AlignCenter, label.first + "\n" + label.second);
 }
 
 Sidebar::Sidebar(QWidget *parent) : QFrame(parent), onroad(false), flag_pressed(false), settings_pressed(false) {
@@ -33,7 +33,7 @@ Sidebar::Sidebar(QWidget *parent) : QFrame(parent), onroad(false), flag_pressed(
 
   setAttribute(Qt::WA_OpaquePaintEvent);
   setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding);
-  setFixedWidth(111);
+  setFixedWidth(142);
 
   QObject::connect(uiState(), &UIState::uiUpdate, this, &Sidebar::updateState);
 
@@ -127,23 +127,23 @@ void Sidebar::drawSidebar(QPainter &p) {
   p.setOpacity(1.0);
 
   // network
-  int x = 21;
+  int x = 27;
   const QColor gray(0x54, 0x54, 0x54);
   for (int i = 0; i < 5; ++i) {
     p.setBrush(i < net_strength ? Qt::white : gray);
-    p.drawEllipse(x, 73, 10, 10);
-    x += 14;
+    p.drawEllipse(x, 104, 13, 13);
+    x += 18;
   }
 
-  p.setFont(InterFont(13));
+  p.setFont(InterFont(17));
   p.setPen(QColor(0xff, 0xff, 0xff));
-  const QRect r = QRect(21, 91, width() - 37, 18);
+  const QRect r = QRect(27, 130, width() - 47, 26);
   p.drawText(r, Qt::AlignLeft | Qt::AlignVCenter, net_type);
 
 #ifndef SUNNYPILOT
   // metrics
-  drawMetric(p, temp_status.first, temp_status.second, 125);
-  drawMetric(p, panda_status.first, panda_status.second, 184);
-  drawMetric(p, connect_status.first, connect_status.second, 242);
+  drawMetric(p, temp_status.first, temp_status.second, 179);
+  drawMetric(p, panda_status.first, panda_status.second, 263);
+  drawMetric(p, connect_status.first, connect_status.second, 346);
 #endif
 }

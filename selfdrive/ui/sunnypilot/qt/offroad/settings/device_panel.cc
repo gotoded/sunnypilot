@@ -12,7 +12,7 @@
 
 DevicePanelSP::DevicePanelSP(SettingsWindowSP *parent) : DevicePanel(parent) {
   QGridLayout *device_grid_layout = new QGridLayout();
-  device_grid_layout->setSpacing(11);
+  device_grid_layout->setSpacing(14);
   device_grid_layout->setHorizontalSpacing(2);
   device_grid_layout->setVerticalSpacing(9);
 
@@ -79,7 +79,7 @@ DevicePanelSP::DevicePanelSP(SettingsWindowSP *parent) : DevicePanel(parent) {
   // offroad mode and power buttons
 
   QHBoxLayout *power_layout = new QHBoxLayout();
-  power_layout->setSpacing(2);
+  power_layout->setSpacing(3);
 
   PushButtonSP *rebootBtn = new PushButtonSP(tr("Reboot"), 266, this);
   rebootBtn->setStyleSheet(rebootButtonStyle);
@@ -100,7 +100,7 @@ DevicePanelSP::DevicePanelSP(SettingsWindowSP *parent) : DevicePanel(parent) {
   QObject::connect(offroadBtn, &PushButtonSP::clicked, this, &DevicePanelSP::setOffroadMode);
 
   QVBoxLayout *power_group_layout = new QVBoxLayout();
-  power_group_layout->setSpacing(11);
+  power_group_layout->setSpacing(14);
   power_group_layout->addWidget(offroadBtn, 0, Qt::AlignHCenter);
   power_group_layout->addLayout(power_layout);
 

@@ -18,23 +18,23 @@ Updater::Updater(const QString &updater_path, const QString &manifest_path, QWid
   prompt = new QWidget;
   {
     QVBoxLayout *layout = new QVBoxLayout(prompt);
-    layout->setContentsMargins(100, 250, 100, 100);
+    layout->setContentsMargins(128, 139, 128, 56);
 
     QLabel *title = new QLabel(tr("Update Required"));
-    title->setStyleSheet("font-size: 30px; font-weight: bold;");
+    title->setStyleSheet("font-size: 38px; font-weight: bold;");
     layout->addWidget(title);
 
-    layout->addSpacing(75);
+    layout->addSpacing(42);
 
     QLabel *desc = new QLabel(tr("An operating system update is required. Connect your device to Wi-Fi for the fastest update experience. The download size is approximately 1GB."));
     desc->setWordWrap(true);
-    desc->setStyleSheet("font-size: 24px;");
+    desc->setStyleSheet("font-size: 31px;");
     layout->addWidget(desc);
 
     layout->addStretch();
 
     QHBoxLayout *hlayout = new QHBoxLayout;
-    hlayout->setSpacing(30);
+    hlayout->setSpacing(38);
     layout->addLayout(hlayout);
 
     QPushButton *connect = new QPushButton(tr("Connect to Wi-Fi"));
@@ -62,15 +62,15 @@ Updater::Updater(const QString &updater_path, const QString &manifest_path, QWid
   wifi = new QWidget;
   {
     QVBoxLayout *layout = new QVBoxLayout(wifi);
-    layout->setContentsMargins(100, 100, 100, 100);
+    layout->setContentsMargins(128, 56, 128, 56);
 
     Networking *networking = new Networking(this, false);
-    networking->setStyleSheet("Networking { background-color: #292929; border-radius: 13px; }");
+    networking->setStyleSheet("Networking { background-color: #292929; border-radius: 17px; }");
     layout->addWidget(networking, 1);
 
     QPushButton *back = new QPushButton(tr("Back"));
     back->setObjectName("navBtn");
-    back->setStyleSheet("padding-left: 60px; padding-right: 60px;");
+    back->setStyleSheet("padding-left: 77px; padding-right: 77px;");
     QObject::connect(back, &QPushButton::clicked, [=]() {
       setCurrentWidget(prompt);
     });
@@ -81,11 +81,11 @@ Updater::Updater(const QString &updater_path, const QString &manifest_path, QWid
   progress = new QWidget;
   {
     QVBoxLayout *layout = new QVBoxLayout(progress);
-    layout->setContentsMargins(150, 330, 150, 150);
+    layout->setContentsMargins(83, 183, 83, 83);
     layout->setSpacing(0);
 
     text = new QLabel(tr("Loading..."));
-    text->setStyleSheet("font-size: 33px; font-weight: 222;");
+    text->setStyleSheet("font-size: 42px; font-weight: 222;");
     layout->addWidget(text, 0, Qt::AlignTop);
 
     layout->addSpacing(100);
@@ -93,7 +93,7 @@ Updater::Updater(const QString &updater_path, const QString &manifest_path, QWid
     bar = new QProgressBar();
     bar->setRange(0, 100);
     bar->setTextVisible(false);
-    bar->setFixedHeight(72);
+    bar->setFixedHeight(103);
     layout->addWidget(bar, 0, Qt::AlignTop);
 
     layout->addStretch();
@@ -126,9 +126,9 @@ Updater::Updater(const QString &updater_path, const QString &manifest_path, QWid
     }
     QPushButton#navBtn {
       height: 60;
-      font-size: 20px;
+      font-size: 26px;
       font-weight: 148;
-      border-radius: 4px;
+      border-radius: 5px;
       background-color: #333333;
     }
     QPushButton#navBtn:pressed {

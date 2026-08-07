@@ -11,8 +11,8 @@
 
 MadsSettings::MadsSettings(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
-  main_layout->setContentsMargins(18, 7, 18, 7);
-  main_layout->setSpacing(7);
+  main_layout->setContentsMargins(23, 10, 23, 10);
+  main_layout->setSpacing(9);
 
   // Back button
   PanelBackButton *back = new PanelBackButton();

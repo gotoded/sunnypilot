@@ -18,7 +18,7 @@ QFrame *horizontal_line(QWidget *parent) {
     border-bottom-style: solid;
     border-color: gray;
   )");
-  line->setFixedHeight(4);
+  line->setFixedHeight(5);
   return line;
 }
 
@@ -39,12 +39,12 @@ AbstractControlSP::AbstractControlSP(const QString &title, const QString &desc, 
 
   hlayout = new QHBoxLayout;
   hlayout->setMargin(0);
-  hlayout->setSpacing(7);
+  hlayout->setSpacing(9);
 
   // title
   title_label = new QPushButton(title);
-  title_label->setFixedHeight(44);
-  title_label->setStyleSheet("font-size: 18px; font-weight: 166; text-align: left; border: none;");
+  title_label->setFixedHeight(63);
+  title_label->setStyleSheet("font-size: 23px; font-weight: 213; text-align: left; border: none;");
   hlayout->addWidget(title_label, 1);
 
   // value next to control button
@@ -57,8 +57,8 @@ AbstractControlSP::AbstractControlSP(const QString &title, const QString &desc, 
 
   // description
   description = new QLabel(desc);
-  description->setContentsMargins(15, 7, 15, 7);
-  description->setStyleSheet("font-size: 15px; color: grey");
+  description->setContentsMargins(19, 10, 19, 10);
+  description->setStyleSheet("font-size: 19px; color: grey");
   description->setWordWrap(true);
   description->setVisible(false);
   main_layout->addWidget(description);
@@ -117,8 +117,8 @@ AbstractControlSP_SELECTOR::AbstractControlSP_SELECTOR(const QString &title, con
   // title
   if (!title.isEmpty()) {
     title_label = new QPushButton(title);
-    title_label->setFixedHeight(44);
-    title_label->setStyleSheet("font-size: 18px; font-weight: 166; text-align: left; border: none; padding: 7 0 0 0");
+    title_label->setFixedHeight(63);
+    title_label->setStyleSheet("font-size: 23px; font-weight: 213; text-align: left; border: none; padding: 10 0 0 0");
     main_layout->addWidget(title_label, 1);
 
     connect(title_label, &QPushButton::clicked, [=]() {
@@ -152,8 +152,8 @@ AbstractControlSP_SELECTOR::AbstractControlSP_SELECTOR(const QString &title, con
 
   // description
   description = new QLabel(desc);
-  description->setContentsMargins(0, 7, 15, 7);
-  description->setStyleSheet("font-size: 15px; color: grey");
+  description->setContentsMargins(0, 10, 19, 10);
+  description->setStyleSheet("font-size: 19px; color: grey");
   description->setWordWrap(true);
   description->setVisible(false);
   main_layout->addWidget(description);
@@ -181,8 +181,8 @@ ButtonControlSP::ButtonControlSP(const QString &title, const QString &text, cons
   btn.setStyleSheet(R"(
     QPushButton {
       padding: 0;
-      border-radius: 18px;
-      font-size: 13px;
+      border-radius: 23px;
+      font-size: 17px;
       font-weight: 185;
       color: #E4E4E4;
       background-color: #393939;
@@ -194,7 +194,7 @@ ButtonControlSP::ButtonControlSP(const QString &title, const QString &text, cons
       color: #33E4E4E4;
     }
   )");
-  btn.setFixedSize(92, 37);
+  btn.setFixedSize(118, 53);
   QObject::connect(&btn, &QPushButton::clicked, this, &ButtonControlSP::clicked);
   hlayout->addWidget(&btn);
 }
@@ -246,7 +246,7 @@ ParamControlSP::ParamControlSP(const QString &param, const QString &title, const
 void ParamControlSP::toggleClicked(bool state) {
   auto do_confirm = [this]() {
     QString content("<body><h2 style=\"text-align: center;\">" + title_label->text() + "</h2><br>"
-                    "<p style=\"text-align: center; margin: 0 47px; font-size: 18px;\">" + getDescription() + "</p></body>");
+                    "<p style=\"text-align: center; margin: 0 60px; font-size: 23px;\">" + getDescription() + "</p></body>");
     return ConfirmationDialog(content, tr("Enable"), tr("Cancel"), true, this).exec();
   };
 

@@ -25,16 +25,16 @@ DriveStats::DriveStats(QWidget* parent) : QFrame(parent) {
   metric_ = Params().getBool("IsMetric");
 
   QVBoxLayout* main_layout = new QVBoxLayout(this);
-  main_layout->setContentsMargins(18, 18, 18, 22);
+  main_layout->setContentsMargins(23, 26, 23, 31);
 
   auto add_stats_layouts = [=](const QString &title, StatsLabels& labels) {
     QGridLayout* grid_layout = new QGridLayout;
-    grid_layout->setVerticalSpacing(4);
-    grid_layout->setContentsMargins(0, 14, 0, 4);
+    grid_layout->setVerticalSpacing(5);
+    grid_layout->setContentsMargins(0, 20, 0, 6);
 
     int row = 0;
     grid_layout->addWidget(newLabel(title, "title"), row++, 0, 1, 3);
-    grid_layout->addItem(new QSpacerItem(0, 18), row++, 0, 1, 1);
+    grid_layout->addItem(new QSpacerItem(0, 26), row++, 0, 1, 1);
 
     grid_layout->addWidget(labels.routes = newLabel("0", "number"), row, 0, Qt::AlignLeft);
     grid_layout->addWidget(labels.distance = newLabel("0", "number"), row, 1, Qt::AlignLeft);
@@ -63,9 +63,9 @@ DriveStats::DriveStats(QWidget* parent) : QFrame(parent) {
       border-radius: 4px;
     }
 
-    QLabel[type="title"] { font-size: 51px; font-weight: 185; }
-    QLabel[type="number"] { font-size: 78px; font-weight: 185; }
-    QLabel[type="unit"] { font-size: 51px; font-weight: 111; color: #A0A0A0; }
+    QLabel[type="title"] { font-size: 65px; font-weight: 237; }
+    QLabel[type="number"] { font-size: 100px; font-weight: 237; }
+    QLabel[type="unit"] { font-size: 65px; font-weight: 142; color: #A0A0A0; }
   )");
 }
 
