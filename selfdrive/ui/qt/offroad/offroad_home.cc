@@ -14,7 +14,16 @@
 // OffroadHome: the offroad home page
 
 OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
-  QVBoxLayout* main_layout = new QVBoxLayout(this);
+  // 根布局：road 摄像头背景 + 内容叠加（webcam 模式下 offroad 也能看到画面）
+  QStackedLayout* root_layout = new QStackedLayout(this);
+  root_layout->setStackingMode(QStackedLayout::StackAll);
+
+  camera_widget = new CameraWidget("camerad", VISION_STREAM_ROAD, this);
+  camera_widget->setAttribute(Qt::WA_TransparentForMouseEvents);
+  root_layout->addWidget(camera_widget);
+
+  QWidget* content_widget = new QWidget(this);
+  QVBoxLayout* main_layout = new QVBoxLayout(content_widget);
   main_layout->setContentsMargins(19, 21, 19, 21);
 
   // top header
@@ -122,6 +131,8 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
       font-size: 26px;
     }
   )");
+
+  root_layout->addWidget(content_widget);
 }
 
 void OffroadHome::showEvent(QShowEvent *event) {
