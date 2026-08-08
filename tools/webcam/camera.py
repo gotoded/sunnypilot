@@ -58,15 +58,25 @@ class CameraMJPG:
         self.cam_type_state = cam_type_state
         self.stream_type = stream_type
         self.current_format = actual_format  # 记录当前格式用于后续处理
+        print(f"摄像头实际分辨率: {self.W}x{self.H}, 像素格式: {actual_format}")
 
     def _configure_camera_format(self, target_fourcc):
-        """尝试设置摄像头的FourCC格式"""
+        """尝试设置摄像头的FourCC格式，MJPG 失败时回退 YUYV"""
         fourcc = cv2.VideoWriter_fourcc(*target_fourcc)
         self.cap.set(cv2.CAP_PROP_FOURCC, fourcc)
         self.cap.set(cv2.CAP_PROP_FOURCC, fourcc)
         self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)  # 优先选择最高分辨率
         self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
         self.cap.set(cv2.CAP_PROP_FPS, 20)
+
+        # MJPG 未生效时（如 imx415 走 RKISP 输出 YUYV），回退尝试 YUYV/YUY2
+        if target_fourcc == "MJPG" and self._get_current_format() != "MJPG":
+            for fmt in ("YUYV", "YUY2"):
+                fallback_fourcc = cv2.VideoWriter_fourcc(*fmt)
+                self.cap.set(cv2.CAP_PROP_FOURCC, fallback_fourcc)
+                self.cap.set(cv2.CAP_PROP_FOURCC, fallback_fourcc)
+                if self._get_current_format() == fmt:
+                    break
 
 
     def _get_current_format(self):
@@ -81,19 +91,27 @@ class CameraMJPG:
 
     def read_frames(self):
         """持续读取帧并转换为 NV12"""
+        warned_raw = False
         while True:
             ret, frame = self.cap.read()
             if not ret:
                 break
 
-            if self.current_format == "MJPG":
-                # print("MJPG", self.W, "  ", self.H)
-                if frame.shape != (self.H, self.W, 3):
-                    raise ValueError("MJPG 解码后帧形状异常，请检查摄像头设置")
+            # OpenCV V4L2 后端对 MJPG/YUYV 会自动转换为 BGR；若返回非 3 通道（如 RAW），尝试转换
+            if frame.ndim == 3 and frame.shape[2] == 3:
                 yield self._bgr_to_nv12(frame)
             else:
-                # print("MJPEG", self.W, "  ", self.H)
-                yield self._bgr_to_nv12(frame)
+                if not warned_raw:
+                    print(f"警告: 摄像头返回非 RGB 帧，形状 {frame.shape}，尝试转换")
+                    warned_raw = True
+                if frame.ndim == 2:
+                    bgr = cv2.cvtColor(frame, cv2.COLOR_GRAY2BGR)
+                    yield self._bgr_to_nv12(bgr)
+                elif frame.ndim == 3 and frame.shape[2] == 2:
+                    bgr = cv2.cvtColor(frame, cv2.COLOR_YUV2BGR_YUYV)
+                    yield self._bgr_to_nv12(bgr)
+                else:
+                    raise ValueError(f"无法处理摄像头帧格式: {frame.shape}")
         self.cap.release()
 
     def __del__(self):
