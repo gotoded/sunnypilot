@@ -3,6 +3,7 @@
 #include <QPushButton>
 #include <QStackedLayout>
 
+#include "selfdrive/ui/ui_scale.h"
 NetworkingSP::NetworkingSP(QWidget *parent) : Networking(parent) {
   auto vlayout = wifiScreen->findChild<QVBoxLayout*>();
   auto hlayout = new QHBoxLayout();
@@ -10,7 +11,7 @@ NetworkingSP::NetworkingSP(QWidget *parent) : Networking(parent) {
   // Create and setup scan button
   auto scanButton = new QPushButton(tr("Scan"));
   scanButton->setObjectName("scan_btn");
-  scanButton->setFixedSize(189, 53);
+  scanButton->setFixedSize(ui_scale::px_w(189), ui_scale::px_h(53));
 
   connect(wifi, &WifiManager::refreshSignal, this, [=]() { scanButton->setText(tr("Scan")); scanButton->setEnabled(true); });
   connect(scanButton, &QPushButton::clicked, [=]() { scanButton->setText(tr("Scanning...")); scanButton->setEnabled(false); wifi->requestScan(); });
@@ -25,7 +26,7 @@ NetworkingSP::NetworkingSP(QWidget *parent) : Networking(parent) {
   }
 
   // Insert our new layout at the top of vlayout
-  vlayout->setMargin(19);
+  vlayout->setMargin(ui_scale::px_min(19));
   vlayout->insertLayout(0, hlayout);
 
   // Add our scan button to the existing style selectors

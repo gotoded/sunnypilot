@@ -7,8 +7,10 @@
 #include <QVariantAnimation>
 #include <QWidget>
 
+#include "selfdrive/ui/ui_scale.h"
+
 constexpr int spinner_fps = 30;
-constexpr QSize spinner_size = QSize(170, 170);
+inline QSize spinner_size() { return QSize(ui_scale::px_w(170), ui_scale::px_h(170)); }
 
 class TrackWidget : public QWidget  {
   Q_OBJECT

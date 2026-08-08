@@ -13,6 +13,7 @@
 
 #include "common/util.h"
 #include "system/hardware/hw.h"
+#include "selfdrive/ui/ui_scale.h"
 #include "selfdrive/ui/qt/api.h"
 #include "selfdrive/ui/qt/qt_window.h"
 #include "selfdrive/ui/qt/network/networking.h"
@@ -89,36 +90,36 @@ void Setup::download(QString url) {
 QWidget * Setup::low_voltage() {
   QWidget *widget = new QWidget();
   QVBoxLayout *main_layout = new QVBoxLayout(widget);
-  main_layout->setContentsMargins(20, 0, 20, 20);
+  main_layout->setContentsMargins(ui_scale::px_w(20), 0, ui_scale::px_w(20), ui_scale::px_h(20));
   main_layout->setSpacing(0);
 
   // inner text layout: warning icon, title, and body
   QVBoxLayout *inner_layout = new QVBoxLayout();
-  inner_layout->setContentsMargins(41, 53, 135, 0);
+  inner_layout->setContentsMargins(ui_scale::px_w(41), ui_scale::px_h(53), ui_scale::px_w(135), 0);
   main_layout->addLayout(inner_layout);
 
   QLabel *triangle = new QLabel();
   triangle->setPixmap(QPixmap(ASSET_PATH + "offroad/icon_warning.png"));
   inner_layout->addWidget(triangle, 0, Qt::AlignTop | Qt::AlignLeft);
-  inner_layout->addSpacing(30);
+  inner_layout->addSpacing(ui_scale::px_h(30));
 
   QLabel *title = new QLabel(tr("WARNING: Low Voltage"));
-  title->setStyleSheet("font-size: 42px; font-weight: 185; color: #FF594F;");
+  title->setStyleSheet(QString("font-size: %1px; font-weight: 185; color: #FF594F;").arg(ui_scale::px_w(42)));
   inner_layout->addWidget(title, 0, Qt::AlignTop | Qt::AlignLeft);
 
-  inner_layout->addSpacing(9);
+  inner_layout->addSpacing(ui_scale::px_h(9));
 
   QLabel *body = new QLabel(tr("Power your device in a car with a harness or proceed at your own risk."));
   body->setWordWrap(true);
   body->setAlignment(Qt::AlignTop | Qt::AlignLeft);
-  body->setStyleSheet("font-size: 38px; font-weight: 111;");
+  body->setStyleSheet(QString("font-size: %1px; font-weight: 111;").arg(ui_scale::px_w(38)));
   inner_layout->addWidget(body);
 
   inner_layout->addStretch();
 
   // power off + continue buttons
   QHBoxLayout *blayout = new QHBoxLayout();
-  blayout->setSpacing(23);
+  blayout->setSpacing(ui_scale::px_w(23));
   main_layout->addLayout(blayout, 0);
 
   QPushButton *poweroff = new QPushButton(tr("Power off"));
@@ -143,25 +144,25 @@ QWidget * Setup::getting_started() {
   main_layout->setMargin(0);
 
   QVBoxLayout *vlayout = new QVBoxLayout();
-  vlayout->setContentsMargins(78, 149, 47, 0);
+  vlayout->setContentsMargins(ui_scale::px_w(78), ui_scale::px_h(149), ui_scale::px_w(47), 0);
   main_layout->addLayout(vlayout);
 
   QLabel *title = new QLabel(tr("Getting Started"));
-  title->setStyleSheet("font-size: 42px; font-weight: 185;");
+  title->setStyleSheet(QString("font-size: %1px; font-weight: 185;").arg(ui_scale::px_w(42)));
   vlayout->addWidget(title, 0, Qt::AlignTop | Qt::AlignLeft);
 
-  vlayout->addSpacing(47);
+  vlayout->addSpacing(ui_scale::px_h(47));
   QLabel *desc = new QLabel(tr("Before we get on the road, let’s finish installation and cover some details."));
   desc->setWordWrap(true);
-  desc->setStyleSheet("font-size: 38px; font-weight: 111;");
+  desc->setStyleSheet(QString("font-size: %1px; font-weight: 111;").arg(ui_scale::px_w(38)));
   vlayout->addWidget(desc, 0, Qt::AlignTop | Qt::AlignLeft);
 
   vlayout->addStretch();
 
   QPushButton *btn = new QPushButton();
   btn->setIcon(QIcon(":/img_continue_triangle.svg"));
-  btn->setIconSize(QSize(26, 56));
-  btn->setFixedSize(147, 572);
+  btn->setIconSize(QSize(ui_scale::px_w(26), ui_scale::px_h(56)));
+  btn->setFixedSize(ui_scale::px_w(147), ui_scale::px_h(572));
   btn->setProperty("primary", true);
   btn->setStyleSheet("border: none;");
   main_layout->addWidget(btn, 0, Qt::AlignRight);
@@ -173,26 +174,26 @@ QWidget * Setup::getting_started() {
 QWidget * Setup::network_setup() {
   QWidget *widget = new QWidget();
   QVBoxLayout *main_layout = new QVBoxLayout(widget);
-  main_layout->setContentsMargins(20, 18, 20, 18);
+  main_layout->setContentsMargins(ui_scale::px_w(20), ui_scale::px_h(18), ui_scale::px_w(20), ui_scale::px_h(18));
 
   // title
   QLabel *title = new QLabel(tr("Connect to Wi-Fi"));
-  title->setStyleSheet("font-size: 42px; font-weight: 185;");
+  title->setStyleSheet(QString("font-size: %1px; font-weight: 185;").arg(ui_scale::px_w(42)));
   main_layout->addWidget(title, 0, Qt::AlignLeft | Qt::AlignTop);
 
-  main_layout->addSpacing(9);
+  main_layout->addSpacing(ui_scale::px_h(9));
 
   // wifi widget
   Networking *networking = new Networking(this, false);
-  networking->setStyleSheet("Networking {background-color: #292929; border-radius: 6px;}");
+  networking->setStyleSheet(QString("Networking {background-color: #292929; border-radius: %1px;}").arg(ui_scale::px_w(6)));
   main_layout->addWidget(networking, 1);
 
-  main_layout->addSpacing(13);
+  main_layout->addSpacing(ui_scale::px_h(13));
 
   // back + continue buttons
   QHBoxLayout *blayout = new QHBoxLayout;
   main_layout->addLayout(blayout);
-  blayout->setSpacing(23);
+  blayout->setSpacing(ui_scale::px_w(23));
 
   QPushButton *back = new QPushButton(tr("Back"));
   back->setObjectName("navBtn");
@@ -234,21 +235,21 @@ QWidget * radio_button(QString title, QButtonGroup *group) {
   QPushButton *btn = new QPushButton(title);
   btn->setCheckable(true);
   group->addButton(btn);
-  btn->setStyleSheet(R"(
+  btn->setStyleSheet(QString(R"(
     QPushButton {
-      height: 86;
-      padding-left: 38px;
-      padding-right: 38px;
+      height: %1px;
+      padding-left: %2px;
+      padding-right: %3px;
       text-align: left;
-      font-size: 38px;
+      font-size: %4px;
       font-weight: 148;
-      border-radius: 5px;
+      border-radius: %5px;
       background-color: #4F4F4F;
     }
     QPushButton:checked {
       background-color: #465BEA;
     }
-  )");
+  )").arg(ui_scale::px_h(86)).arg(ui_scale::px_w(38)).arg(ui_scale::px_w(38)).arg(ui_scale::px_w(38)).arg(ui_scale::px_w(5)));
 
   // checkmark icon
   QPixmap pix(":/img_circled_check.svg");
@@ -256,7 +257,7 @@ QWidget * radio_button(QString title, QButtonGroup *group) {
   btn->setIconSize(QSize(0, 0));
   btn->setLayoutDirection(Qt::RightToLeft);
   QObject::connect(btn, &QPushButton::toggled, [=](bool checked) {
-    btn->setIconSize(checked ? QSize(38, 38) : QSize(0, 0));
+    btn->setIconSize(checked ? QSize(ui_scale::px_w(38), ui_scale::px_h(38)) : QSize(0, 0));
   });
   return btn;
 }
@@ -264,15 +265,15 @@ QWidget * radio_button(QString title, QButtonGroup *group) {
 QWidget * Setup::software_selection() {
   QWidget *widget = new QWidget();
   QVBoxLayout *main_layout = new QVBoxLayout(widget);
-  main_layout->setContentsMargins(20, 18, 20, 18);
+  main_layout->setContentsMargins(ui_scale::px_w(20), ui_scale::px_h(18), ui_scale::px_w(20), ui_scale::px_h(18));
   main_layout->setSpacing(0);
 
   // title
   QLabel *title = new QLabel(tr("Choose Software to Install"));
-  title->setStyleSheet("font-size: 42px; font-weight: 185;");
+  title->setStyleSheet(QString("font-size: %1px; font-weight: 185;").arg(ui_scale::px_w(42)));
   main_layout->addWidget(title, 0, Qt::AlignLeft | Qt::AlignTop);
 
-  main_layout->addSpacing(18);
+  main_layout->addSpacing(ui_scale::px_h(18));
 
   // openpilot + custom radio buttons
   QButtonGroup *group = new QButtonGroup(widget);
@@ -281,7 +282,7 @@ QWidget * Setup::software_selection() {
   QWidget *openpilot = radio_button(tr("openpilot"), group);
   main_layout->addWidget(openpilot);
 
-  main_layout->addSpacing(11);
+  main_layout->addSpacing(ui_scale::px_h(11));
 
   QWidget *custom = radio_button(tr("Custom Software"), group);
   main_layout->addWidget(custom);
@@ -291,7 +292,7 @@ QWidget * Setup::software_selection() {
   // back + continue buttons
   QHBoxLayout *blayout = new QHBoxLayout;
   main_layout->addLayout(blayout);
-  blayout->setSpacing(23);
+  blayout->setSpacing(ui_scale::px_w(23));
 
   QPushButton *back = new QPushButton(tr("Back"));
   back->setObjectName("navBtn");
@@ -334,7 +335,7 @@ QWidget * Setup::downloading() {
   QWidget *widget = new QWidget();
   QVBoxLayout *main_layout = new QVBoxLayout(widget);
   QLabel *txt = new QLabel(tr("Downloading..."));
-  txt->setStyleSheet("font-size: 33px; font-weight: 185;");
+  txt->setStyleSheet(QString("font-size: %1px; font-weight: 185;").arg(ui_scale::px_w(33)));
   main_layout->addWidget(txt, 0, Qt::AlignCenter);
   return widget;
 }
@@ -342,32 +343,32 @@ QWidget * Setup::downloading() {
 QWidget * Setup::download_failed(QLabel *url, QLabel *body) {
   QWidget *widget = new QWidget();
   QVBoxLayout *main_layout = new QVBoxLayout(widget);
-  main_layout->setContentsMargins(20, 68, 20, 20);
+  main_layout->setContentsMargins(ui_scale::px_w(20), ui_scale::px_h(68), ui_scale::px_w(20), ui_scale::px_h(20));
   main_layout->setSpacing(0);
 
   QLabel *title = new QLabel(tr("Download Failed"));
-  title->setStyleSheet("font-size: 42px; font-weight: 185;");
+  title->setStyleSheet(QString("font-size: %1px; font-weight: 185;").arg(ui_scale::px_w(42)));
   main_layout->addWidget(title, 0, Qt::AlignTop | Qt::AlignLeft);
 
-  main_layout->addSpacing(25);
+  main_layout->addSpacing(ui_scale::px_h(25));
 
   url->setWordWrap(true);
   url->setAlignment(Qt::AlignTop | Qt::AlignLeft);
-  url->setStyleSheet("font-family: \"JetBrains Mono\"; font-size: 31px; font-weight: 190; margin-right: 49px;");
+  url->setStyleSheet(QString("font-family: \"JetBrains Mono\"; font-size: %1px; font-weight: 190; margin-right: %2px;").arg(ui_scale::px_w(31)).arg(ui_scale::px_w(49)));
   main_layout->addWidget(url);
 
-  main_layout->addSpacing(18);
+  main_layout->addSpacing(ui_scale::px_h(18));
 
   body->setWordWrap(true);
   body->setAlignment(Qt::AlignTop | Qt::AlignLeft);
-  body->setStyleSheet("font-size: 38px; font-weight: 143; margin-right: 49px;");
+  body->setStyleSheet(QString("font-size: %1px; font-weight: 143; margin-right: %2px;").arg(ui_scale::px_w(38)).arg(ui_scale::px_w(49)));
   main_layout->addWidget(body);
 
   main_layout->addStretch();
 
   // reboot + start over buttons
   QHBoxLayout *blayout = new QHBoxLayout();
-  blayout->setSpacing(23);
+  blayout->setSpacing(ui_scale::px_w(23));
   main_layout->addLayout(blayout, 0);
 
   QPushButton *reboot = new QPushButton(tr("Reboot device"));
@@ -385,11 +386,11 @@ QWidget * Setup::download_failed(QLabel *url, QLabel *body) {
     setCurrentIndex(1);
   });
 
-  widget->setStyleSheet(R"(
+  widget->setStyleSheet(QString(R"(
     QLabel {
-      margin-left: 43;
+      margin-left: %1px;
     }
-  )");
+  )").arg(ui_scale::px_w(43)));
   return widget;
 }
 
@@ -438,7 +439,7 @@ Setup::Setup(QWidget *parent) : QStackedWidget(parent) {
   });
 
   // TODO: revisit pressed bg color
-  setStyleSheet(R"(
+  setStyleSheet(QString(R"(
     * {
       color: white;
       font-family: Inter;
@@ -447,10 +448,10 @@ Setup::Setup(QWidget *parent) : QStackedWidget(parent) {
       background-color: black;
     }
     QPushButton#navBtn {
-      height: 60;
-      font-size: 26px;
+      height: %1px;
+      font-size: %2px;
       font-weight: 148;
-      border-radius: 5px;
+      border-radius: %3px;
       background-color: #333333;
     }
     QPushButton#navBtn:disabled, QPushButton[primary='true']:disabled {
@@ -466,7 +467,7 @@ Setup::Setup(QWidget *parent) : QStackedWidget(parent) {
     QPushButton[primary='true']:pressed, #navBtn:pressed[primary='true'] {
       background-color: #3049F4;
     }
-  )");
+  )").arg(ui_scale::px_h(60)).arg(ui_scale::px_w(26)).arg(ui_scale::px_w(5)));
 }
 
 void Setup::selectLanguage() {

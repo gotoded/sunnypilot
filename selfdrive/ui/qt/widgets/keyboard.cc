@@ -8,6 +8,8 @@
 #include <QTouchEvent>
 #include <QVBoxLayout>
 
+#include "selfdrive/ui/ui_scale.h"
+
 const QString BACKSPACE_KEY = "⌫";
 const QString ENTER_KEY = "→";
 const QString SHIFT_KEY = "⇧";
@@ -42,18 +44,18 @@ bool KeyButton::event(QEvent *event) {
 
 KeyboardLayout::KeyboardLayout(QWidget* parent, const std::vector<QVector<QString>>& layout) : QWidget(parent) {
   QVBoxLayout* main_layout = new QVBoxLayout(this);
-  main_layout->setMargin(0);
-  main_layout->setSpacing(0);
+  main_layout->setMargin(ui_scale::px_min(0));
+  main_layout->setSpacing(ui_scale::px_h(0));
 
   QButtonGroup* btn_group = new QButtonGroup(this);
   QObject::connect(btn_group, SIGNAL(buttonClicked(QAbstractButton*)), parent, SLOT(handleButton(QAbstractButton*)));
 
   for (const auto &s : layout) {
     QHBoxLayout *hlayout = new QHBoxLayout;
-    hlayout->setSpacing(0);
+    hlayout->setSpacing(ui_scale::px_w(0));
 
     if (main_layout->count() == 1) {
-      hlayout->addSpacing(33);
+      hlayout->addSpacing(ui_scale::px_w(33));
     }
 
     for (const QString &p : s) {
@@ -70,13 +72,13 @@ KeyboardLayout::KeyboardLayout(QWidget* parent, const std::vector<QVector<QStrin
           }
         )");
       }
-      btn->setFixedHeight(50 + key_spacing_vertical);
+      btn->setFixedHeight(ui_scale::px_h(50 + key_spacing_vertical));
       btn_group->addButton(btn);
       hlayout->addWidget(btn, KEY_STRETCH.value(p, 1));
     }
 
     if (main_layout->count() == 1) {
-      hlayout->addSpacing(33);
+      hlayout->addSpacing(ui_scale::px_w(33));
     }
 
     main_layout->addLayout(hlayout);
@@ -84,11 +86,11 @@ KeyboardLayout::KeyboardLayout(QWidget* parent, const std::vector<QVector<QStrin
 
   setStyleSheet(QString(R"(
     QPushButton {
-      font-size: 27px;
-      margin-left: %1px;
-      margin-right: %1px;
-      margin-top: %1px;
-      margin-bottom: %1px;
+      font-size: %1px;
+      margin-left: %2px;
+      margin-right: %2px;
+      margin-top: %2px;
+      margin-bottom: %2px;
       padding: 0px;
       border-radius: 4px;
       color: #dddddd;
@@ -97,12 +99,12 @@ KeyboardLayout::KeyboardLayout(QWidget* parent, const std::vector<QVector<QStrin
     QPushButton:pressed {
       background-color: #333333;
     }
-  )").arg(key_spacing_vertical / 2).arg(key_spacing_horizontal / 2));
+  )").arg(ui_scale::px_w(27)).arg(key_spacing_vertical / 2).arg(key_spacing_horizontal / 2));
 }
 
 Keyboard::Keyboard(QWidget *parent) : QFrame(parent) {
   main_layout = new QStackedLayout(this);
-  main_layout->setMargin(0);
+  main_layout->setMargin(ui_scale::px_min(0));
 
   // lowercase
   std::vector<QVector<QString>> lowercase = {

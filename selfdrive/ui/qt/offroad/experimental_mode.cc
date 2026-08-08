@@ -7,6 +7,7 @@
 #include <QStyle>
 
 #include "selfdrive/ui/ui.h"
+#include "selfdrive/ui/ui_scale.h"
 
 #ifdef SUNNYPILOT
 constexpr int toggles_settings_index = 3;
@@ -21,9 +22,9 @@ ExperimentalModeButton::ExperimentalModeButton(QWidget *parent) : QPushButton(pa
   // go to toggles and expand experimental mode description
   connect(this, &QPushButton::clicked, [=]() { emit openSettings(toggles_settings_index, "ExperimentalMode"); });
 
-  setFixedHeight(66);
+  setFixedHeight(ui_scale::px_h(66));
   QHBoxLayout *main_layout = new QHBoxLayout;
-  main_layout->setContentsMargins(horizontal_padding, 0, horizontal_padding, 0);
+  main_layout->setContentsMargins(ui_scale::px_w(horizontal_padding), 0, ui_scale::px_w(horizontal_padding), 0);
 
   mode_label = new QLabel;
   mode_icon = new QLabel;
@@ -34,19 +35,19 @@ ExperimentalModeButton::ExperimentalModeButton(QWidget *parent) : QPushButton(pa
 
   setLayout(main_layout);
 
-  setStyleSheet(R"(
+  setStyleSheet(QString(R"(
     QPushButton {
       border: none;
     }
 
     QLabel {
-      font-size: 20px;
+      font-size: %1px;
       font-weight: 143;
       text-align: left;
       font-family: JetBrainsMono;
       color: #000000;
     }
-  )");
+  )").arg(ui_scale::px_w(20)));
 }
 
 void ExperimentalModeButton::paintEvent(QPaintEvent *event) {

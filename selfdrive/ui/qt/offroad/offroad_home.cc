@@ -7,6 +7,7 @@
 
 #include "selfdrive/ui/qt/offroad/offroad_home.h"
 
+#include "selfdrive/ui/ui_scale.h"
 #include "selfdrive/ui/qt/offroad/experimental_mode.h"
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/widgets/prime.h"
@@ -24,12 +25,12 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
 
   QWidget* content_widget = new QWidget(this);
   QVBoxLayout* main_layout = new QVBoxLayout(content_widget);
-  main_layout->setContentsMargins(19, 21, 19, 21);
+  main_layout->setContentsMargins(ui_scale::px_w(19), ui_scale::px_h(21), ui_scale::px_w(19), ui_scale::px_h(21));
 
   // top header
   QHBoxLayout* header_layout = new QHBoxLayout();
   header_layout->setContentsMargins(0, 0, 0, 0);
-  header_layout->setSpacing(8);
+  header_layout->setSpacing(ui_scale::px_w(8));
 
   update_notif = new QPushButton(tr("UPDATE"));
   update_notif->setVisible(false);
@@ -49,14 +50,14 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
   main_layout->addLayout(header_layout);
 
   // main content
-  main_layout->addSpacing(13);
+  main_layout->addSpacing(ui_scale::px_h(13));
   center_layout = new QStackedLayout();
 
   QWidget *home_widget = new QWidget(this);
   {
     home_layout = new QHBoxLayout(home_widget);
     home_layout->setContentsMargins(0, 0, 0, 0);
-    home_layout->setSpacing(14);
+    home_layout->setSpacing(ui_scale::px_w(14));
 
 #ifndef SUNNYPILOT
     // left: PrimeAdWidget
@@ -64,15 +65,15 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
     QVBoxLayout *left_prime_layout = new QVBoxLayout();
     left_prime_layout->setContentsMargins(0, 0, 0, 0);
     QWidget *prime_user = new PrimeUserWidget();
-    prime_user->setStyleSheet(R"(
-    border-radius: 4px;
+    prime_user->setStyleSheet(QString(R"(
+    border-radius: %1px;
     background-color: #333333;
-    )");
+    )").arg(ui_scale::px_w(4)));
     left_prime_layout->addWidget(prime_user);
     left_prime_layout->addStretch();
     left_widget->addWidget(new LayoutWidget(left_prime_layout));
     left_widget->addWidget(new PrimeAdWidget);
-    left_widget->setStyleSheet("border-radius: 4px;");
+    left_widget->setStyleSheet(QString("border-radius: %1px;").arg(ui_scale::px_w(4)));
 
     connect(uiState()->prime_state, &PrimeState::changed, [left_widget]() {
       left_widget->setCurrentIndex(uiState()->prime_state->isSubscribed() ? 0 : 1);
@@ -85,8 +86,8 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
     QWidget* right_widget = new QWidget(this);
     QVBoxLayout* right_column = new QVBoxLayout(right_widget);
     right_column->setContentsMargins(0, 0, 0, 0);
-    right_widget->setFixedWidth(355);
-    right_column->setSpacing(14);
+    right_widget->setFixedWidth(ui_scale::px_w(355));
+    right_column->setSpacing(ui_scale::px_h(14));
 
     ExperimentalModeButton *experimental_mode = new ExperimentalModeButton(this);
     QObject::connect(experimental_mode, &ExperimentalModeButton::openSettings, this, &OffroadHome::openSettings);
@@ -114,7 +115,7 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
   timer = new QTimer(this);
   timer->callOnTimeout(this, &OffroadHome::refresh);
 
-  setStyleSheet(R"(
+  setStyleSheet(QString(R"(
     * {
       color: white;
     }
@@ -122,15 +123,15 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
       background-color: black;
     }
     OffroadHome > QPushButton {
-      padding: 8px 15px;
-      border-radius: 3px;
-      font-size: 18px;
+      padding: %1px %2px;
+      border-radius: %3px;
+      font-size: %4px;
       font-weight: 236;
     }
     OffroadHome > QLabel {
-      font-size: 26px;
+      font-size: %5px;
     }
-  )");
+  )").arg(ui_scale::px_h(8)).arg(ui_scale::px_w(15)).arg(ui_scale::px_w(3)).arg(ui_scale::px_w(18)).arg(ui_scale::px_w(26)));
 
   root_layout->addWidget(content_widget);
 }

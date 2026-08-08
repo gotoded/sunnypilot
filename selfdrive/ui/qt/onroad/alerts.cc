@@ -3,6 +3,7 @@
 #include <QPainter>
 #include <map>
 
+#include "selfdrive/ui/ui_scale.h"
 #include "selfdrive/ui/qt/util.h"
 
 void OnroadAlerts::updateState(const UIState &s) {
@@ -95,18 +96,18 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
   p.setPen(QColor(0xff, 0xff, 0xff));
   p.setRenderHint(QPainter::TextAntialiasing);
   if (alert.size == cereal::SelfdriveState::AlertSize::SMALL) {
-    p.setFont(InterFont(35, QFont::DemiBold));
+    p.setFont(InterFont(ui_scale::px_w(35), QFont::DemiBold));
     p.drawText(r, Qt::AlignCenter, alert.text1);
   } else if (alert.size == cereal::SelfdriveState::AlertSize::MID) {
-    p.setFont(InterFont(42, QFont::Bold));
-    p.drawText(QRect(0, c.y() - 66, width(), 79), Qt::AlignHCenter | Qt::AlignTop, alert.text1);
-    p.setFont(InterFont(31));
-    p.drawText(QRect(0, c.y() + 11, width(), 47), Qt::AlignHCenter, alert.text2);
+    p.setFont(InterFont(ui_scale::px_w(42), QFont::Bold));
+    p.drawText(QRect(0, c.y() - ui_scale::px_h(66), width(), ui_scale::px_h(79)), Qt::AlignHCenter | Qt::AlignTop, alert.text1);
+    p.setFont(InterFont(ui_scale::px_w(31)));
+    p.drawText(QRect(0, c.y() + ui_scale::px_h(11), width(), ui_scale::px_h(47)), Qt::AlignHCenter, alert.text2);
   } else if (alert.size == cereal::SelfdriveState::AlertSize::FULL) {
     bool l = alert.text1.length() > 15;
-    p.setFont(InterFont(l ? 63 : 84, QFont::Bold));
-    p.drawText(QRect(0, r.y() + (l ? 127 : 143), width(), 317), Qt::AlignHCenter | Qt::TextWordWrap, alert.text1);
-    p.setFont(InterFont(42));
-    p.drawText(QRect(0, r.height() - (l ? 192 : 223), width(), 159), Qt::AlignHCenter | Qt::TextWordWrap, alert.text2);
+    p.setFont(InterFont(ui_scale::px_w(l ? 63 : 84), QFont::Bold));
+    p.drawText(QRect(0, r.y() + (l ? ui_scale::px_h(127) : ui_scale::px_h(143)), width(), ui_scale::px_h(317)), Qt::AlignHCenter | Qt::TextWordWrap, alert.text1);
+    p.setFont(InterFont(ui_scale::px_w(42)));
+    p.drawText(QRect(0, r.height() - (l ? ui_scale::px_h(192) : ui_scale::px_h(223)), width(), ui_scale::px_h(159)), Qt::AlignHCenter | Qt::TextWordWrap, alert.text2);
   }
 }

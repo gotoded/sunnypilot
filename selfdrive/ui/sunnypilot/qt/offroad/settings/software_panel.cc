@@ -12,6 +12,8 @@
 
 #include "common/model.h"
 
+#include "selfdrive/ui/ui_scale.h"
+
 /**
  * @brief Constructs the software panel with model bundle selection functionality
  * @param parent Parent widget
@@ -198,7 +200,7 @@ void SoftwarePanelSP::showResetParamsDialog() {
   const auto button_text = tr("Reset Calibration");
 
   QString content("<body><h2 style=\"text-align: center;\">" + tr("Driving Model Selector") + "</h2><br>"
-                  "<p style=\"text-align: center; margin: 0 164px; font-size: 64px;\">" + confirmMsg + "</p></body>");
+                  QString("<p style=\"text-align: center; margin: 0 %1px; font-size: %2px;\">%3</p></body>").arg(ui_scale::px_w(164)).arg(ui_scale::px_w(64)).arg(confirmMsg));
 
   if (showConfirmationDialog(content, button_text, false)) {
     params.remove("CalibrationParams");

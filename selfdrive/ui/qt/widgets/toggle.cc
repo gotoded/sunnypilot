@@ -2,6 +2,8 @@
 
 #include <QPainter>
 
+#include "selfdrive/ui/ui_scale.h"
+
 Toggle::Toggle(QWidget *parent) : QAbstractButton(parent),
 _height(30),
 _height_rect(22),
@@ -18,7 +20,7 @@ _anim(new QPropertyAnimation(this, "offset_circle", this))
 }
 
 void Toggle::paintEvent(QPaintEvent *e) {
-  this->setFixedHeight(_height);
+  this->setFixedHeight(ui_scale::px_h(_height));
   QPainter p(this);
   p.setPen(Qt::NoPen);
   p.setRenderHint(QPainter::Antialiasing, true);

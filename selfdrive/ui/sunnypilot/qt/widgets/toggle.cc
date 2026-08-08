@@ -14,7 +14,7 @@ ToggleSP::ToggleSP(QWidget *parent) : Toggle(parent) {
 }
 
 void ToggleSP::paintEvent(QPaintEvent *e) {
-  this->setFixedHeight(53);
+  this->setFixedHeight(ui_scale::px_h(53));
   QPainter p(this);
   p.setPen(Qt::NoPen);
   p.setRenderHint(QPainter::Antialiasing, true);

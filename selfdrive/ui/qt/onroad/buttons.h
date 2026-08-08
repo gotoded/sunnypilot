@@ -8,7 +8,9 @@
 #include "selfdrive/ui/ui.h"
 #endif
 
-const int btn_size = 91;
+#include "selfdrive/ui/ui_scale.h"
+
+const int btn_size = ui_scale::px_min(91);
 const int img_size = (btn_size / 4) * 3;
 
 class ExperimentalButton : public QPushButton {

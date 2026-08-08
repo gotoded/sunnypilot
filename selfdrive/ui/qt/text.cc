@@ -6,6 +6,7 @@
 #include <QWidget>
 
 #include "system/hardware/hw.h"
+#include "selfdrive/ui/ui_scale.h"
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/qt_window.h"
 #include "selfdrive/ui/qt/widgets/scrollview.h"
@@ -17,7 +18,7 @@ int main(int argc, char *argv[]) {
   setMainWindow(&window);
 
   QGridLayout *main_layout = new QGridLayout(&window);
-  main_layout->setMargin(23);
+  main_layout->setMargin(ui_scale::px_min(23));
 
   QLabel *label = new QLabel(argv[1]);
   label->setWordWrap(true);
@@ -43,22 +44,22 @@ int main(int argc, char *argv[]) {
 #endif
   main_layout->addWidget(btn, 0, 0, Qt::AlignRight | Qt::AlignBottom);
 
-  window.setStyleSheet(R"(
+  window.setStyleSheet(QString(R"(
     * {
       outline: none;
       color: white;
       background-color: black;
-      font-size: 31px;
+      font-size: %1px;
     }
     QPushButton {
-      padding: 18px;
-      padding-right: 38px;
-      padding-left: 38px;
+      padding: %2px;
+      padding-right: %3px;
+      padding-left: %4px;
       border: 1px solid white;
-      border-radius: 8px;
-      margin-right: 16px;
+      border-radius: %5px;
+      margin-right: %6px;
     }
-  )");
+  )").arg(ui_scale::px_w(31)).arg(ui_scale::px_min(18)).arg(ui_scale::px_w(38)).arg(ui_scale::px_w(38)).arg(ui_scale::px_min(8)).arg(ui_scale::px_w(16)));
 
   return a.exec();
 }

@@ -11,6 +11,7 @@
 #include <QVBoxLayout>
 
 #include "common/util.h"
+#include "selfdrive/ui/ui_scale.h"
 #include "selfdrive/ui/installer/installer.h"
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/qt_window.h"
@@ -47,7 +48,7 @@ Installer::Installer(QWidget *parent) : QWidget(parent) {
   layout->setSpacing(0);
 
   QLabel *title = new QLabel(tr("Installing..."));
-  title->setStyleSheet("font-size: 90px; font-weight: 600;");
+  title->setStyleSheet(QString("font-size: %1px; font-weight: 600;").arg(ui_scale::px_w(90)));
   layout->addWidget(title, 0, Qt::AlignTop);
 
   layout->addSpacing(170);
@@ -55,13 +56,13 @@ Installer::Installer(QWidget *parent) : QWidget(parent) {
   bar = new QProgressBar();
   bar->setRange(0, 100);
   bar->setTextVisible(false);
-  bar->setFixedHeight(72);
+  bar->setFixedHeight(ui_scale::px_h(72));
   layout->addWidget(bar, 0, Qt::AlignTop);
 
-  layout->addSpacing(30);
+  layout->addSpacing(ui_scale::px_h(30));
 
   val = new QLabel("0%");
-  val->setStyleSheet("font-size: 70px; font-weight: 300;");
+  val->setStyleSheet(QString("font-size: %1px; font-weight: 300;").arg(ui_scale::px_w(70)));
   layout->addWidget(val, 0, Qt::AlignTop);
 
   layout->addStretch();

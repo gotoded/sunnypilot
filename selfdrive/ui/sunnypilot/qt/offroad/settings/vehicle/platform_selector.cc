@@ -12,6 +12,7 @@
 #include <QJsonObject>
 #include <QMap>
 
+#include "selfdrive/ui/ui_scale.h"
 #include "selfdrive/ui/sunnypilot/qt/util.h"
 
 QVariant PlatformSelector::getPlatformBundle(const QString &key) {
@@ -75,7 +76,7 @@ void PlatformSelector::setPlatform(const QString &platform) {
                       .arg(platform, offroad_msg);
 
   QString content("<body><h2 style=\"text-align: center;\">" + tr("Vehicle Selector") + "</h2><br>"
-                  "<p style=\"text-align: center; margin: 0 60px; font-size: 23px;\">" + msg + "</p></body>");
+                  QString("<p style=\"text-align: center; margin: 0 %1px; font-size: %2px;\">%3</p></body>").arg(ui_scale::px_w(60)).arg(ui_scale::px_w(23)).arg(msg));
 
   if (ConfirmationDialog(content, tr("Confirm"), tr("Cancel"), true, this).exec()) {
     QJsonObject json_bundle;

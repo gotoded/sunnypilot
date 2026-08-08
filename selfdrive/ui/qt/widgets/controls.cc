@@ -4,15 +4,16 @@
 #include <QStyleOption>
 
 #include "selfdrive/ui/qt/util.h"
+#include "selfdrive/ui/ui_scale.h"
 
 AbstractControl::AbstractControl(const QString &title, const QString &desc, const QString &icon, QWidget *parent) : QFrame(parent) {
 #ifndef SUNNYPILOT
   QVBoxLayout *main_layout = new QVBoxLayout(this);
-  main_layout->setMargin(0);
+  main_layout->setMargin(ui_scale::px_min(0));
 
   hlayout = new QHBoxLayout;
-  hlayout->setMargin(0);
-  hlayout->setSpacing(9);
+  hlayout->setMargin(ui_scale::px_min(0));
+  hlayout->setSpacing(ui_scale::px_w(9));
 
   // left icon
   icon_label = new QLabel(this);
@@ -26,8 +27,8 @@ AbstractControl::AbstractControl(const QString &title, const QString &desc, cons
 
   // title
   title_label = new QPushButton(title);
-  title_label->setFixedHeight(63);
-  title_label->setStyleSheet("font-size: 23px; font-weight: 190; text-align: left; border: none;");
+  title_label->setFixedHeight(ui_scale::px_h(63));
+  title_label->setStyleSheet(QString("font-size: %1px; font-weight: 190; text-align: left; border: none;").arg(ui_scale::px_w(23)));
   hlayout->addWidget(title_label, 1);
 
   // value next to control button
@@ -40,8 +41,8 @@ AbstractControl::AbstractControl(const QString &title, const QString &desc, cons
 
   // description
   description = new QLabel(desc);
-  description->setContentsMargins(15, 7, 15, 7);
-  description->setStyleSheet("font-size: 19px; color: grey");
+  description->setContentsMargins(ui_scale::px_w(15), ui_scale::px_h(7), ui_scale::px_w(15), ui_scale::px_h(7));
+  description->setStyleSheet(QString("font-size: %1px; color: grey").arg(ui_scale::px_w(19)));
   description->setWordWrap(true);
   description->setVisible(false);
   main_layout->addWidget(description);
@@ -70,11 +71,11 @@ void AbstractControl::hideEvent(QHideEvent *e) {
 
 ButtonControl::ButtonControl(const QString &title, const QString &text, const QString &desc, QWidget *parent) : AbstractControl(title, desc, "", parent) {
   btn.setText(text);
-  btn.setStyleSheet(R"(
+  btn.setStyleSheet(QString(R"(
     QPushButton {
       padding: 0;
       border-radius: 23px;
-      font-size: 17px;
+      font-size: %1px;
       font-weight: 185;
       color: #E4E4E4;
       background-color: #393939;
@@ -85,8 +86,8 @@ ButtonControl::ButtonControl(const QString &title, const QString &text, const QS
     QPushButton:disabled {
       color: #33E4E4E4;
     }
-  )");
-  btn.setFixedSize(118, 53);
+  )").arg(ui_scale::px_w(17)));
+  btn.setFixedSize(ui_scale::px_w(118), ui_scale::px_h(53));
   QObject::connect(&btn, &QPushButton::clicked, this, &ButtonControl::clicked);
   hlayout->addWidget(&btn);
 }

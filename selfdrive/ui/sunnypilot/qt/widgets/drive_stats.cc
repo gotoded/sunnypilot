@@ -7,6 +7,8 @@
 
 #include "selfdrive/ui/sunnypilot/qt/widgets/drive_stats.h"
 
+#include "selfdrive/ui/ui_scale.h"
+
 #include <QDebug>
 #include <QGridLayout>
 #include <QVBoxLayout>
@@ -25,12 +27,12 @@ DriveStats::DriveStats(QWidget* parent) : QFrame(parent) {
   metric_ = Params().getBool("IsMetric");
 
   QVBoxLayout* main_layout = new QVBoxLayout(this);
-  main_layout->setContentsMargins(23, 26, 23, 31);
+  main_layout->setContentsMargins(ui_scale::px_w(23), ui_scale::px_h(26), ui_scale::px_w(23), ui_scale::px_h(31));
 
   auto add_stats_layouts = [=](const QString &title, StatsLabels& labels) {
     QGridLayout* grid_layout = new QGridLayout;
     grid_layout->setVerticalSpacing(5);
-    grid_layout->setContentsMargins(0, 20, 0, 6);
+    grid_layout->setContentsMargins(0, ui_scale::px_h(20), 0, ui_scale::px_h(6));
 
     int row = 0;
     grid_layout->addWidget(newLabel(title, "title"), row++, 0, 1, 3);
@@ -57,16 +59,8 @@ DriveStats::DriveStats(QWidget* parent) : QFrame(parent) {
     QObject::connect(repeater, &RequestRepeater::requestDone, this, &DriveStats::parseResponse);
   }
 
-  setStyleSheet(R"(
-    DriveStats {
-      background-color: #333333;
-      border-radius: 4px;
-    }
-
-    QLabel[type="title"] { font-size: 65px; font-weight: 237; }
-    QLabel[type="number"] { font-size: 100px; font-weight: 237; }
-    QLabel[type="unit"] { font-size: 65px; font-weight: 142; color: #A0A0A0; }
-  )");
+  setStyleSheet(QString("DriveStats { background-color: #333333; border-radius: %1px; } QLabel[type=\"title\"] { font-size: %2px; font-weight: 237; } QLabel[type=\"number\"] { font-size: %3px; font-weight: 237; } QLabel[type=\"unit\"] { font-size: %4px; font-weight: 142; color: #A0A0A0; }")
+    .arg(ui_scale::px_w(4)).arg(ui_scale::px_w(65)).arg(ui_scale::px_w(100)).arg(ui_scale::px_w(65)));
 }
 
 void DriveStats::updateStats() {

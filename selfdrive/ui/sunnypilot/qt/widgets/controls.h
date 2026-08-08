@@ -340,7 +340,7 @@ public:
     outer_layout.setSpacing(0);
     outer_layout.addLayout(&inner_layout);
     inner_layout.setMargin(0);
-    inner_layout.setSpacing(12); // default spacing is 25
+    inner_layout.setSpacing(ui_scale::px_h(12)); // default spacing is 25
     outer_layout.addStretch();
   }
   inline void addItem(QWidget *w) { inner_layout.addWidget(w); }
@@ -509,8 +509,8 @@ private:
   bool request_update = false;
   QString _title = "";
 
-  const QString label_enabled_style = "font-size: 23px; font-weight: 213; color: #FFFFFF;";
-  const QString label_disabled_style = "font-size: 23px; font-weight: 213; color: #5C5C5C;";
+  const QString label_enabled_style = QString("font-size: %1px; font-weight: 213; color: #FFFFFF;").arg(ui_scale::px_w(23));
+  const QString label_disabled_style = QString("font-size: %1px; font-weight: 213; color: #5C5C5C;").arg(ui_scale::px_w(23));
 
   bool button_enabled = true;
 };

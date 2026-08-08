@@ -12,24 +12,25 @@
 #include <QTransform>
 
 #include "system/hardware/hw.h"
+#include "selfdrive/ui/ui_scale.h"
 #include "selfdrive/ui/qt/qt_window.h"
 #include "selfdrive/ui/qt/util.h"
 
 TrackWidget::TrackWidget(QWidget *parent) : QWidget(parent) {
   setAttribute(Qt::WA_OpaquePaintEvent);
-  setFixedSize(spinner_size);
+  setFixedSize(spinner_size());
 
   // pre-compute all the track imgs. make this a gif instead?
-  QPixmap comma_img = loadPixmap("../assets/img_spinner_comma.png", spinner_size);
-  QPixmap track_img = loadPixmap("../assets/img_spinner_track.png", spinner_size);
+  QPixmap comma_img = loadPixmap("../assets/img_spinner_comma.png", spinner_size());
+  QPixmap track_img = loadPixmap("../assets/img_spinner_track.png", spinner_size());
 
   QTransform transform(1, 0, 0, 1, width() / 2, height() / 2);
-  QPixmap pm(spinner_size);
+  QPixmap pm(spinner_size());
   QPainter p(&pm);
   p.setRenderHint(QPainter::SmoothPixmapTransform);
   for (int i = 0; i < track_imgs.size(); ++i) {
     p.resetTransform();
-    p.fillRect(0, 0, spinner_size.width(), spinner_size.height(), Qt::black);
+    p.fillRect(0, 0, spinner_size().width(), spinner_size().height(), Qt::black);
     p.drawPixmap(0, 0, comma_img);
     p.setTransform(transform.rotate(360 / spinner_fps));
     p.drawPixmap(-width() / 2, -height() / 2, track_img);
@@ -54,7 +55,7 @@ void TrackWidget::paintEvent(QPaintEvent *event) {
 Spinner::Spinner(QWidget *parent) : QWidget(parent) {
   QGridLayout *main_layout = new QGridLayout(this);
   main_layout->setSpacing(0);
-  main_layout->setMargin(106);
+  main_layout->setMargin(ui_scale::px_min(106));
 
   main_layout->addWidget(new TrackWidget(this), 0, 0, Qt::AlignHCenter | Qt::AlignVCenter);
 
@@ -68,21 +69,21 @@ Spinner::Spinner(QWidget *parent) : QWidget(parent) {
   progress_bar->setRange(2, 37);
   progress_bar->setTextVisible(false);
   progress_bar->setVisible(false);
-  progress_bar->setFixedHeight(5);
+  progress_bar->setFixedHeight(ui_scale::px_h(5));
   main_layout->addWidget(progress_bar, 1, 0, Qt::AlignHCenter);
 
-  setStyleSheet(R"(
+  setStyleSheet(QString(R"(
     Spinner {
       background-color: black;
     }
     QLabel {
       color: white;
-      font-size: 38px;
+      font-size: %1px;
       background-color: transparent;
     }
     QProgressBar {
       background-color: #373737;
-      width: 37px;
+      width: %2px;
       border solid white;
       border-radius: 4px;
     }
@@ -90,7 +91,7 @@ Spinner::Spinner(QWidget *parent) : QWidget(parent) {
       border-radius: 4px;
       background-color: white;
     }
-  )");
+  )").arg(ui_scale::px_w(38)).arg(ui_scale::px_w(37)));
 
   notifier = new QSocketNotifier(fileno(stdin), QSocketNotifier::Read);
   QObject::connect(notifier, &QSocketNotifier::activated, this, &Spinner::update);

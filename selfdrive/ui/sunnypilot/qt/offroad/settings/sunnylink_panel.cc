@@ -8,6 +8,7 @@
 #include "selfdrive/ui/sunnypilot/qt/offroad/settings/sunnylink_panel.h"
 
 #include "common/watchdog.h"
+#include "selfdrive/ui/ui_scale.h"
 #include "selfdrive/ui/sunnypilot/qt/util.h"
 #include "selfdrive/ui/sunnypilot/qt/widgets/controls.h"
 #include <QtConcurrent>
@@ -31,7 +32,7 @@ SunnylinkPanel::SunnylinkPanel(QWidget *parent) : QFrame(parent) {
 
   sunnylinkScreen = new QWidget(this);
   auto vlayout = new QVBoxLayout(sunnylinkScreen);
-  vlayout->setContentsMargins(23, 10, 23, 10);
+  vlayout->setContentsMargins(ui_scale::px_w(23), ui_scale::px_h(10), ui_scale::px_w(23), ui_scale::px_h(10));
 
   auto *list = new ListWidget(this, false);
   QString sunnylinkEnabledBtnDesc = tr("This is the master switch, it will allow you to cutoff any sunnylink requests should you want to do that.");
@@ -107,9 +108,9 @@ SunnylinkPanel::SunnylinkPanel(QWidget *parent) : QFrame(parent) {
   });
   // Settings Restore and Settings Backup in the same horizontal space
   auto settings_layout = new QHBoxLayout;
-  settings_layout->setContentsMargins(0, 0, 0, 16);
+  settings_layout->setContentsMargins(0, 0, 0, ui_scale::px_h(16));
   settings_layout->addWidget(backupSettings);
-  settings_layout->addSpacing(10);
+  settings_layout->addSpacing(ui_scale::px_w(10));
   settings_layout->addWidget(restoreSettings);
   settings_layout->setAlignment(Qt::AlignLeft);
   list->addItem(settings_layout);

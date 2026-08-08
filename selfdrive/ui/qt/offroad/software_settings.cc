@@ -10,6 +10,7 @@
 #include "common/params.h"
 #include "common/util.h"
 #include "selfdrive/ui/ui.h"
+#include "selfdrive/ui/ui_scale.h"
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/widgets/controls.h"
 #include "selfdrive/ui/qt/widgets/input.h"
@@ -22,7 +23,7 @@ void SoftwarePanel::checkForUpdates() {
 
 SoftwarePanel::SoftwarePanel(QWidget* parent) : ListWidget(parent) {
   onroadLbl = new QLabel(tr("Updates are only downloaded while the car is off."));
-  onroadLbl->setStyleSheet("font-size: 23px; font-weight: 190; text-align: left; padding-top: 17px; padding-bottom: 17px;");
+  onroadLbl->setStyleSheet(QString("font-size: %1px; font-weight: 190; text-align: left; padding-top: %2px; padding-bottom: %2px;").arg(ui_scale::px_w(23)).arg(ui_scale::px_h(17)));
   addItem(onroadLbl);
 
   // current version

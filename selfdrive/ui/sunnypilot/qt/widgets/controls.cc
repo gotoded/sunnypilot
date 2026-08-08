@@ -10,6 +10,8 @@
 #include <QPainter>
 #include <QStyleOption>
 
+#include "selfdrive/ui/ui_scale.h"
+
 QFrame *horizontal_line(QWidget *parent) {
   QFrame *line = new QFrame(parent);
   line->setFrameShape(QFrame::StyledPanel);
@@ -18,14 +20,14 @@ QFrame *horizontal_line(QWidget *parent) {
     border-bottom-style: solid;
     border-color: gray;
   )");
-  line->setFixedHeight(5);
+  line->setFixedHeight(ui_scale::px_h(5));
   return line;
 }
 
 QFrame *vertical_space(int height, QWidget *parent) {
   QFrame *v_space = new QFrame(parent);
   v_space->setFrameShape(QFrame::StyledPanel);
-  v_space->setFixedHeight(height);
+  v_space->setFixedHeight(ui_scale::px_h(height));
   return v_space;
 }
 
@@ -39,12 +41,12 @@ AbstractControlSP::AbstractControlSP(const QString &title, const QString &desc, 
 
   hlayout = new QHBoxLayout;
   hlayout->setMargin(0);
-  hlayout->setSpacing(9);
+  hlayout->setSpacing(ui_scale::px_w(9));
 
   // title
   title_label = new QPushButton(title);
-  title_label->setFixedHeight(63);
-  title_label->setStyleSheet("font-size: 23px; font-weight: 213; text-align: left; border: none;");
+  title_label->setFixedHeight(ui_scale::px_h(63));
+  title_label->setStyleSheet(QString("font-size: %1px; font-weight: 213; text-align: left; border: none;").arg(ui_scale::px_w(23)));
   hlayout->addWidget(title_label, 1);
 
   // value next to control button
@@ -57,8 +59,8 @@ AbstractControlSP::AbstractControlSP(const QString &title, const QString &desc, 
 
   // description
   description = new QLabel(desc);
-  description->setContentsMargins(19, 10, 19, 10);
-  description->setStyleSheet("font-size: 19px; color: grey");
+  description->setContentsMargins(ui_scale::px_w(19), ui_scale::px_h(10), ui_scale::px_w(19), ui_scale::px_h(10));
+  description->setStyleSheet(QString("font-size: %1px; color: grey").arg(ui_scale::px_w(19)));
   description->setWordWrap(true);
   description->setVisible(false);
   main_layout->addWidget(description);
@@ -117,8 +119,8 @@ AbstractControlSP_SELECTOR::AbstractControlSP_SELECTOR(const QString &title, con
   // title
   if (!title.isEmpty()) {
     title_label = new QPushButton(title);
-    title_label->setFixedHeight(63);
-    title_label->setStyleSheet("font-size: 23px; font-weight: 213; text-align: left; border: none; padding: 10 0 0 0");
+    title_label->setFixedHeight(ui_scale::px_h(63));
+    title_label->setStyleSheet(QString("font-size: %1px; font-weight: 213; text-align: left; border: none; padding: %2 0 0 0").arg(ui_scale::px_w(23)).arg(ui_scale::px_h(10)));
     main_layout->addWidget(title_label, 1);
 
     connect(title_label, &QPushButton::clicked, [=]() {
@@ -135,25 +137,25 @@ AbstractControlSP_SELECTOR::AbstractControlSP_SELECTOR(const QString &title, con
           delete spacingItem;
           spacingItem = nullptr;
         } else if (!isVisible && spacingItem == nullptr) {
-          spacingItem = new QSpacerItem(44, 44, QSizePolicy::Minimum, QSizePolicy::Fixed);
+          spacingItem = new QSpacerItem(ui_scale::px_w(44), ui_scale::px_h(44), QSizePolicy::Minimum, QSizePolicy::Fixed);
           main_layout->insertItem(main_layout->indexOf(description), spacingItem);
         }
       }
     });
   } else {
-    main_layout->addSpacing(7);
+    main_layout->addSpacing(ui_scale::px_h(7));
   }
 
   main_layout->addLayout(hlayout);
   if (!desc.isEmpty() && spacingItem == nullptr) {
-    spacingItem = new QSpacerItem(16, 16, QSizePolicy::Minimum, QSizePolicy::Fixed);
+    spacingItem = new QSpacerItem(ui_scale::px_w(16), ui_scale::px_h(16), QSizePolicy::Minimum, QSizePolicy::Fixed);
     main_layout->insertItem(main_layout->count(), spacingItem);
   }
 
   // description
   description = new QLabel(desc);
-  description->setContentsMargins(0, 10, 19, 10);
-  description->setStyleSheet("font-size: 19px; color: grey");
+  description->setContentsMargins(0, ui_scale::px_h(10), ui_scale::px_w(19), ui_scale::px_h(10));
+  description->setStyleSheet(QString("font-size: %1px; color: grey").arg(ui_scale::px_w(19)));
   description->setWordWrap(true);
   description->setVisible(false);
   main_layout->addWidget(description);
@@ -167,7 +169,7 @@ void AbstractControlSP_SELECTOR::hideEvent(QHideEvent *e) {
   }
 
   if (spacingItem == nullptr) {
-    spacingItem = new QSpacerItem(16, 16, QSizePolicy::Minimum, QSizePolicy::Fixed);
+    spacingItem = new QSpacerItem(ui_scale::px_w(16), ui_scale::px_h(16), QSizePolicy::Minimum, QSizePolicy::Fixed);
     main_layout->insertItem(main_layout->indexOf(description), spacingItem);
   }
 }
@@ -178,23 +180,9 @@ ButtonControlSP::ButtonControlSP(const QString &title, const QString &text, cons
     : AbstractControlSP(title, desc, "", parent) {
 
   btn.setText(text);
-  btn.setStyleSheet(R"(
-    QPushButton {
-      padding: 0;
-      border-radius: 23px;
-      font-size: 17px;
-      font-weight: 185;
-      color: #E4E4E4;
-      background-color: #393939;
-    }
-    QPushButton:pressed {
-      background-color: #4a4a4a;
-    }
-    QPushButton:disabled {
-      color: #33E4E4E4;
-    }
-  )");
-  btn.setFixedSize(118, 53);
+  btn.setStyleSheet(QString("QPushButton { padding: 0; border-radius: %1px; font-size: %2px; font-weight: 185; color: #E4E4E4; background-color: #393939; } QPushButton:pressed { background-color: #4a4a4a; } QPushButton:disabled { color: #33E4E4E4; }")
+    .arg(ui_scale::px_w(23)).arg(ui_scale::px_w(17)));
+  btn.setFixedSize(ui_scale::px_w(118), ui_scale::px_h(53));
   QObject::connect(&btn, &QPushButton::clicked, this, &ButtonControlSP::clicked);
   hlayout->addWidget(&btn);
 }
@@ -246,7 +234,7 @@ ParamControlSP::ParamControlSP(const QString &param, const QString &title, const
 void ParamControlSP::toggleClicked(bool state) {
   auto do_confirm = [this]() {
     QString content("<body><h2 style=\"text-align: center;\">" + title_label->text() + "</h2><br>"
-                    "<p style=\"text-align: center; margin: 0 60px; font-size: 23px;\">" + getDescription() + "</p></body>");
+                    + QString("<p style=\"text-align: center; margin: 0 %1px; font-size: %2px;\">%3</p></body>").arg(ui_scale::px_w(60)).arg(ui_scale::px_w(23)).arg(getDescription()));
     return ConfirmationDialog(content, tr("Enable"), tr("Cancel"), true, this).exec();
   };
 

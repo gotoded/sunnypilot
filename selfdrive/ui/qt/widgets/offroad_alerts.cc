@@ -12,11 +12,12 @@
 #include "common/util.h"
 #include "system/hardware/hw.h"
 #include "selfdrive/ui/qt/widgets/scrollview.h"
+#include "selfdrive/ui/ui_scale.h"
 
 AbstractAlert::AbstractAlert(bool hasRebootBtn, QWidget *parent) : QFrame(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
-  main_layout->setMargin(18);
-  main_layout->setSpacing(11);
+  main_layout->setMargin(ui_scale::px_min(18));
+  main_layout->setSpacing(ui_scale::px_h(11));
 
   QWidget *widget = new QWidget;
   scrollable_layout = new QVBoxLayout(widget);
@@ -28,13 +29,13 @@ AbstractAlert::AbstractAlert(bool hasRebootBtn, QWidget *parent) : QFrame(parent
   main_layout->addLayout(footer_layout);
 
   QPushButton *dismiss_btn = new QPushButton(tr("Close"));
-  dismiss_btn->setFixedSize(148, 46);
+  dismiss_btn->setFixedSize(ui_scale::px_w(148), ui_scale::px_h(46));
   footer_layout->addWidget(dismiss_btn, 0, Qt::AlignBottom | Qt::AlignLeft);
   QObject::connect(dismiss_btn, &QPushButton::clicked, this, &AbstractAlert::dismiss);
 
   snooze_btn = new QPushButton(tr("Snooze Update"));
   snooze_btn->setVisible(false);
-  snooze_btn->setFixedSize(185, 46);
+  snooze_btn->setFixedSize(ui_scale::px_w(185), ui_scale::px_h(46));
   footer_layout->addWidget(snooze_btn, 0, Qt::AlignBottom | Qt::AlignRight);
   QObject::connect(snooze_btn, &QPushButton::clicked, [=]() {
     params.putBool("SnoozeUpdate", true);
@@ -44,27 +45,27 @@ AbstractAlert::AbstractAlert(bool hasRebootBtn, QWidget *parent) : QFrame(parent
 
   if (hasRebootBtn) {
     QPushButton *rebootBtn = new QPushButton(tr("Reboot and Update"));
-    rebootBtn->setFixedSize(222, 46);
+    rebootBtn->setFixedSize(ui_scale::px_w(222), ui_scale::px_h(46));
     footer_layout->addWidget(rebootBtn, 0, Qt::AlignBottom | Qt::AlignRight);
     QObject::connect(rebootBtn, &QPushButton::clicked, [=]() { Hardware::reboot(); });
   }
 
-  setStyleSheet(R"(
+  setStyleSheet(QString(R"(
     * {
-      font-size: 18px;
+      font-size: %1px;
       color: white;
     }
     QFrame {
-      border-radius: 11px;
+      border-radius: %2px;
       background-color: #393939;
     }
     QPushButton {
       color: black;
       font-weight: 185;
-      border-radius: 11px;
+      border-radius: %3px;
       background-color: white;
     }
-  )");
+  )").arg(ui_scale::px_w(18)).arg(ui_scale::px_w(11)).arg(ui_scale::px_w(11)));
 }
 
 int OffroadAlert::refresh() {
@@ -83,7 +84,7 @@ int OffroadAlert::refresh() {
     for (auto &[key, severity] : sorted) {
       QLabel *l = new QLabel(this);
       alerts[key] = l;
-      l->setMargin(22);
+      l->setMargin(ui_scale::px_min(22));
       l->setWordWrap(true);
       l->setStyleSheet(QString("background-color: %1").arg(severity ? "#E22C2C" : "#292929"));
       scrollable_layout->addWidget(l);

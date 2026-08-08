@@ -6,13 +6,14 @@
 #include <QPainter>
 #include <QStackedLayout>
 
+#include "selfdrive/ui/ui_scale.h"
 #include "common/params.h"
 #include "common/timing.h"
 
 RecordButton::RecordButton(QWidget *parent) : QPushButton(parent) {
   setCheckable(true);
   setChecked(false);
-  setFixedSize(70, 70);
+  setFixedSize(ui_scale::px_w(70), ui_scale::px_h(70));
 
   QObject::connect(this, &QPushButton::toggled, [=]() {
     setEnabled(false);
@@ -56,7 +57,7 @@ BodyWindow::BodyWindow(QWidget *parent) : fuel_filter(1.0, 5., 1. / UI_FREQ), QW
 
   QWidget *w = new QWidget;
   QVBoxLayout *vlayout = new QVBoxLayout(w);
-  vlayout->setMargin(22);
+  vlayout->setMargin(ui_scale::px_min(22));
   layout->addWidget(w);
 
   // face

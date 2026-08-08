@@ -3,6 +3,7 @@
 #include <QMouseEvent>
 
 #include "selfdrive/ui/qt/util.h"
+#include "selfdrive/ui/ui_scale.h"
 
 void Sidebar::drawMetric(QPainter &p, const QPair<QString, QString> &label, QColor c, int y) {
   const QRect rect = {14, y, 114, 67};
@@ -33,7 +34,7 @@ Sidebar::Sidebar(QWidget *parent) : QFrame(parent), onroad(false), flag_pressed(
 
   setAttribute(Qt::WA_OpaquePaintEvent);
   setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding);
-  setFixedWidth(142);
+  setFixedWidth(ui_scale::px_w(142));
 
   QObject::connect(uiState(), &UIState::uiUpdate, this, &Sidebar::updateState);
 

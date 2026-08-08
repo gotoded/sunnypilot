@@ -8,6 +8,7 @@
 #include "selfdrive/ui/sunnypilot/qt/offroad/settings/lateral_panel.h"
 
 #include "common/util.h"
+#include "selfdrive/ui/ui_scale.h"
 #include "selfdrive/ui/sunnypilot/qt/widgets/controls.h"
 
 LateralPanel::LateralPanel(SettingsWindowSP *parent) : QFrame(parent) {
@@ -16,7 +17,7 @@ LateralPanel::LateralPanel(SettingsWindowSP *parent) : QFrame(parent) {
 
   sunnypilotScreen = new QWidget(this);
   QVBoxLayout* vlayout = new QVBoxLayout(sunnypilotScreen);
-  vlayout->setContentsMargins(23, 10, 23, 10);
+  vlayout->setContentsMargins(ui_scale::px_w(23), ui_scale::px_h(10), ui_scale::px_w(23), ui_scale::px_h(10));
 
   // MADS
   madsToggle = new ParamControl(
@@ -90,20 +91,8 @@ LateralPanel::LateralPanel(SettingsWindowSP *parent) : QFrame(parent) {
   main_layout->addWidget(madsWidget);
   main_layout->addWidget(laneChangeWidget);
 
-  setStyleSheet(R"(
-    #back_btn {
-      font-size: 23px;
-      margin: 0px;
-      padding: 6px;
-      border-width: 0;
-      border-radius: 14px;
-      color: #dddddd;
-      background-color: #393939;
-    }
-    #back_btn:pressed {
-      background-color:  #4a4a4a;
-    }
-  )");
+  setStyleSheet(QString("#back_btn { font-size: %1px; margin: 0px; padding: %2px; border-width: 0; border-radius: %3px; color: #dddddd; background-color: #393939; } #back_btn:pressed { background-color: #4a4a4a; }")
+    .arg(ui_scale::px_w(23)).arg(ui_scale::px_w(6)).arg(ui_scale::px_w(14)));
 
   main_layout->setCurrentWidget(sunnypilotScreen);
 }

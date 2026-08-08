@@ -11,6 +11,7 @@
 #include <QPushButton>
 
 #include "common/params.h"
+#include "selfdrive/ui/ui_scale.h"
 #include "selfdrive/ui/qt/widgets/input.h"
 #include "selfdrive/ui/qt/widgets/toggle.h"
 
@@ -119,7 +120,7 @@ class ToggleControl : public AbstractControl {
 
 public:
   ToggleControl(const QString &title, const QString &desc = "", const QString &icon = "", const bool state = false, QWidget *parent = nullptr) : AbstractControl(title, desc, icon, parent) {
-    toggle.setFixedSize(56, 37);
+    toggle.setFixedSize(ui_scale::px_w(56), ui_scale::px_h(37));
     if (state) {
       toggle.togglePosition();
     }
@@ -188,10 +189,10 @@ class ButtonParamControl : public AbstractControl {
 public:
   ButtonParamControl(const QString &param, const QString &title, const QString &desc, const QString &icon,
                      const std::vector<QString> &button_texts, const int minimum_button_width = 83) : AbstractControl(title, desc, icon) {
-    const QString style = R"(
+    const QString style = QString(R"(
       QPushButton {
         border-radius: 18px;
-        font-size: 14px;
+        font-size: %1px;
         font-weight: 185;
         height:37px;
         padding: 0 9 0 9;
@@ -207,7 +208,7 @@ public:
       QPushButton:disabled {
         color: #33E4E4E4;
       }
-    )";
+    )").arg(ui_scale::px_w(14));
     key = param.toStdString();
     int value = atoi(params.get(key).c_str());
 
@@ -257,11 +258,11 @@ class ListWidget : public QWidget {
   Q_OBJECT
  public:
   explicit ListWidget(QWidget *parent = 0) : QWidget(parent), outer_layout(this) {
-    outer_layout.setMargin(0);
-    outer_layout.setSpacing(0);
+    outer_layout.setMargin(ui_scale::px_min(0));
+    outer_layout.setSpacing(ui_scale::px_h(0));
     outer_layout.addLayout(&inner_layout);
-    inner_layout.setMargin(0);
-    inner_layout.setSpacing(9); // default spacing is 25
+    inner_layout.setMargin(ui_scale::px_min(0));
+    inner_layout.setSpacing(ui_scale::px_h(9)); // default spacing is 25
     outer_layout.addStretch(1);
   }
   inline void addItem(QWidget *w) { inner_layout.addWidget(w); }

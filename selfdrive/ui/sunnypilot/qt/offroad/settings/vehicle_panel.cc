@@ -7,6 +7,7 @@
 
 #include "selfdrive/ui/sunnypilot/qt/offroad/settings/vehicle_panel.h"
 
+#include "selfdrive/ui/ui_scale.h"
 #include "selfdrive/ui/sunnypilot/qt/widgets/scrollview.h"
 
 VehiclePanel::VehiclePanel(QWidget *parent) : QFrame(parent) {
@@ -15,7 +16,7 @@ VehiclePanel::VehiclePanel(QWidget *parent) : QFrame(parent) {
 
   vehicleScreen = new QWidget(this);
   QVBoxLayout *vlayout = new QVBoxLayout(vehicleScreen);
-  vlayout->setContentsMargins(23, 10, 23, 10);
+  vlayout->setContentsMargins(ui_scale::px_w(23), ui_scale::px_h(10), ui_scale::px_w(23), ui_scale::px_h(10));
 
   platformSelector = new PlatformSelector();
   list->addItem(platformSelector);

@@ -9,18 +9,16 @@
 
 #include <QStackedWidget>
 
+#include "selfdrive/ui/ui_scale.h"
 #include "selfdrive/ui/sunnypilot/qt/widgets/drive_stats.h"
 
 OffroadHomeSP::OffroadHomeSP(QWidget *parent) : OffroadHome(parent) {
   QStackedWidget *left_widget = new QStackedWidget(this);
   DriveStats *driveStatsWidget = new DriveStats(this);
-  driveStatsWidget->setStyleSheet(R"(
-    QLabel[type="title"] { font-size: 24px; font-weight: 237; }
-    QLabel[type="number"] { font-size: 37px; font-weight: 237; }
-    QLabel[type="unit"] { font-size: 24px; font-weight: 142; color: #A0A0A0; }
-  )");
+  driveStatsWidget->setStyleSheet(QString("QLabel[type=\"title\"] { font-size: %1px; font-weight: 237; } QLabel[type=\"number\"] { font-size: %2px; font-weight: 237; } QLabel[type=\"unit\"] { font-size: %3px; font-weight: 142; color: #A0A0A0; }")
+    .arg(ui_scale::px_w(24)).arg(ui_scale::px_w(37)).arg(ui_scale::px_w(24)));
   left_widget->addWidget(driveStatsWidget);
-  left_widget->setStyleSheet("border-radius: 4px;");
+  left_widget->setStyleSheet(QString("border-radius: %1px;").arg(ui_scale::px_w(4)));
 
   home_layout->insertWidget(0, left_widget);
 }

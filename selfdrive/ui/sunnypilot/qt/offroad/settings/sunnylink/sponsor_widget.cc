@@ -7,6 +7,7 @@
 
 #include "selfdrive/ui/sunnypilot/qt/offroad/settings/sunnylink/sponsor_widget.h"
 
+#include "selfdrive/ui/ui_scale.h"
 #include "selfdrive/ui/sunnypilot/ui.h"
 #include "selfdrive/ui/sunnypilot/qt/api.h"
 #include "selfdrive/ui/sunnypilot/qt/util.h"
@@ -98,12 +99,12 @@ SunnylinkSponsorPopup::SunnylinkSponsorPopup(bool sponsor_pair, QWidget *parent)
 
   // text
   auto vlayout = new QVBoxLayout();
-  vlayout->setContentsMargins(40, 37, 23, 37);
-  vlayout->setSpacing(23);
+  vlayout->setContentsMargins(ui_scale::px_w(40), ui_scale::px_h(37), ui_scale::px_w(23), ui_scale::px_h(37));
+  vlayout->setSpacing(ui_scale::px_h(23));
   hlayout->addLayout(vlayout, 1);
   {
     auto close = new QPushButton(QIcon(":/icons/close.svg"), "", this);
-    close->setIconSize(QSize(30, 30));
+    close->setIconSize(QSize(ui_scale::px_w(30), ui_scale::px_h(30)));
     close->setStyleSheet("border: none;");
     vlayout->addWidget(close, 0, Qt::AlignLeft);
     connect(close, &QPushButton::clicked, this, [=] {
@@ -116,20 +117,20 @@ SunnylinkSponsorPopup::SunnylinkSponsorPopup(bool sponsor_pair, QWidget *parent)
 
     const QString titleText = sponsor_pair ? tr("Pair your GitHub account") : tr("Early Access: Become a sunnypilot Sponsor");
     const auto title = new QLabel(titleText, this);
-    title->setStyleSheet("font-size: 35px; color: black;");
+    title->setStyleSheet(QString("font-size: %1px; color: black;").arg(ui_scale::px_w(35)));
     title->setWordWrap(true);
     vlayout->addWidget(title);
 
     QStringList instructions = getInstructions(sponsor_pair);
-    QString instructionsHtml = "<ol type='1' style='margin-left: 6px;'>";
+    QString instructionsHtml = QString("<ol type='1' style='margin-left: %1px;'>").arg(ui_scale::px_w(6));
     for (const auto & instruction : instructions) {
-      instructionsHtml += QString("<li style='margin-bottom: 18px;'>%1</li>").arg(instruction);
+      instructionsHtml += QString("<li style='margin-bottom: %1px;'>%2</li>").arg(ui_scale::px_h(18)).arg(instruction);
     }
     instructionsHtml += "</ol>";
     const auto instructionsLabel = new QLabel(instructionsHtml, this);
 
 
-    instructionsLabel->setStyleSheet("font-size: 22px; font-weight: bold; color: black;");
+    instructionsLabel->setStyleSheet(QString("font-size: %1px; font-weight: bold; color: black;").arg(ui_scale::px_w(22)));
     instructionsLabel->setWordWrap(true);
     vlayout->addWidget(instructionsLabel);
 

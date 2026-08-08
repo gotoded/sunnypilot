@@ -8,6 +8,7 @@
  */
 
 #include "selfdrive/ui/sunnypilot/qt/offroad/settings/lateral/lane_change_settings.h"
+#include "selfdrive/ui/ui_scale.h"
 #include "selfdrive/ui/sunnypilot/qt/widgets/scrollview.h"
 #include <map>
 #include <string>
@@ -16,8 +17,8 @@
 
 LaneChangeSettings::LaneChangeSettings(QWidget* parent) : QWidget(parent) {
   QVBoxLayout* main_layout = new QVBoxLayout(this);
-  main_layout->setContentsMargins(23, 10, 23, 10);
-  main_layout->setSpacing(9);
+  main_layout->setContentsMargins(ui_scale::px_w(23), ui_scale::px_h(10), ui_scale::px_w(23), ui_scale::px_h(10));
+  main_layout->setSpacing(ui_scale::px_h(9));
 
   // Back button
   PanelBackButton* back = new PanelBackButton(tr("Back"));

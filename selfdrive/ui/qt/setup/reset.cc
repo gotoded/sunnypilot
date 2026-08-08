@@ -5,6 +5,7 @@
 #include <QTimer>
 #include <QVBoxLayout>
 
+#include "selfdrive/ui/ui_scale.h"
 #include "selfdrive/ui/qt/qt_window.h"
 #include "selfdrive/ui/qt/setup/reset.h"
 
@@ -48,23 +49,23 @@ void Reset::confirm() {
 
 Reset::Reset(ResetMode mode, QWidget *parent) : QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
-  main_layout->setContentsMargins(16, 85, 16, 16);
+  main_layout->setContentsMargins(ui_scale::px_w(16), ui_scale::px_h(85), ui_scale::px_w(16), ui_scale::px_h(16));
   main_layout->setSpacing(0);
 
   QLabel *title = new QLabel(tr("System Reset"));
-  title->setStyleSheet("font-size: 42px; font-weight: 222;");
+  title->setStyleSheet(QString("font-size: %1px; font-weight: 222;").arg(ui_scale::px_w(42)));
   main_layout->addWidget(title, 0, Qt::AlignTop | Qt::AlignLeft);
 
-  main_layout->addSpacing(22);
+  main_layout->addSpacing(ui_scale::px_h(22));
 
   body = new QLabel(tr("System reset triggered. Press confirm to erase all content and settings. Press cancel to resume boot."));
   body->setWordWrap(true);
-  body->setStyleSheet("font-size: 38px; font-weight: light;");
+  body->setStyleSheet(QString("font-size: %1px; font-weight: light;").arg(ui_scale::px_w(38)));
   main_layout->addWidget(body, 1, Qt::AlignTop | Qt::AlignLeft);
 
   QHBoxLayout *blayout = new QHBoxLayout();
   main_layout->addLayout(blayout);
-  blayout->setSpacing(23);
+  blayout->setSpacing(ui_scale::px_w(23));
 
   rejectBtn = new QPushButton(tr("Cancel"));
   blayout->addWidget(rejectBtn);
@@ -102,26 +103,26 @@ Reset::Reset(ResetMode mode, QWidget *parent) : QWidget(parent) {
     startReset();
   }
 
-  setStyleSheet(R"(
+  setStyleSheet(QString(R"(
     * {
       font-family: Inter;
       color: white;
       background-color: black;
     }
     QLabel {
-      margin-left: 52;
+      margin-left: %1px;
     }
     QPushButton {
-      height: 60;
-      font-size: 26px;
+      height: %2px;
+      font-size: %3px;
       font-weight: 148;
-      border-radius: 5px;
+      border-radius: %4px;
       background-color: #333333;
     }
     QPushButton:pressed {
       background-color: #444444;
     }
-  )");
+  )").arg(ui_scale::px_w(52)).arg(ui_scale::px_h(60)).arg(ui_scale::px_w(26)).arg(ui_scale::px_w(5)));
 }
 
 int main(int argc, char *argv[]) {
