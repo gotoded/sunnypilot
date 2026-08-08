@@ -40,11 +40,11 @@ class CameraMJPG:
         if not self.cap.isOpened():
             raise IOError(f"无法打开摄像头设备 {camera_id}")
 
-        # 优先尝试设置 MJPG 格式（高分辨率 + 高帧率）
-        self._configure_camera_format("MJPG")
+        # 优先尝试 UYVY 格式（rkisp 输出格式），失败时回退 MJPG/YUYV/YUY2
+        self._configure_camera_format()
         actual_format = self._get_current_format()
         print("数据格式: ", actual_format)
-        # 若 MJPG 不支持，回退默认
+        # 若 UYVY 不支持，回退默认
 
         # 获取实际设置的FPS并打印
         self.fps = self.cap.get(cv2.CAP_PROP_FPS)
@@ -60,23 +60,17 @@ class CameraMJPG:
         self.current_format = actual_format  # 记录当前格式用于后续处理
         print(f"摄像头实际分辨率: {self.W}x{self.H}, 像素格式: {actual_format}")
 
-    def _configure_camera_format(self, target_fourcc):
-        """尝试设置摄像头的FourCC格式，MJPG 失败时回退 YUYV"""
-        fourcc = cv2.VideoWriter_fourcc(*target_fourcc)
-        self.cap.set(cv2.CAP_PROP_FOURCC, fourcc)
-        self.cap.set(cv2.CAP_PROP_FOURCC, fourcc)
-        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)  # 优先选择最高分辨率
-        self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
-        self.cap.set(cv2.CAP_PROP_FPS, 20)
-
-        # MJPG 未生效时（如 imx415 走 RKISP 输出 YUYV），回退尝试 YUYV/YUY2
-        if target_fourcc == "MJPG" and self._get_current_format() != "MJPG":
-            for fmt in ("YUYV", "YUY2"):
-                fallback_fourcc = cv2.VideoWriter_fourcc(*fmt)
-                self.cap.set(cv2.CAP_PROP_FOURCC, fallback_fourcc)
-                self.cap.set(cv2.CAP_PROP_FOURCC, fallback_fourcc)
-                if self._get_current_format() == fmt:
-                    break
+    def _configure_camera_format(self):
+        """尝试设置摄像头支持的像素格式，优先 UYVY（rkisp 输出格式），回退 MJPG/YUYV/YUY2"""
+        for fmt in ("UYVY", "MJPG", "YUYV", "YUY2"):
+            fourcc = cv2.VideoWriter_fourcc(*fmt)
+            self.cap.set(cv2.CAP_PROP_FOURCC, fourcc)
+            self.cap.set(cv2.CAP_PROP_FOURCC, fourcc)
+            self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)  # 优先选择最高分辨率
+            self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+            self.cap.set(cv2.CAP_PROP_FPS, 20)
+            if self._get_current_format() == fmt:
+                break
 
 
     def _get_current_format(self):
