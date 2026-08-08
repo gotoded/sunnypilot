@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "common/params.h"
+#include "selfdrive/ui/ui_scale.h"
 #include "selfdrive/ui/qt/widgets/controls.h"
 #include "selfdrive/ui/qt/widgets/input.h"
 #include "selfdrive/ui/sunnypilot/qt/widgets/toggle.h"
@@ -148,7 +149,7 @@ public:
     icon_label = new QLabel(this);
     hlayout->addWidget(icon_label);
 
-    toggle.setFixedSize(70, 53);
+    toggle.setFixedSize(ui_scale::px_w(70), ui_scale::px_h(53));
     if (state) {
       toggle.togglePosition();
     }
@@ -221,29 +222,8 @@ class ButtonParamControlSP : public AbstractControlSP_SELECTOR {
 public:
   ButtonParamControlSP(const QString &param, const QString &title, const QString &desc, const QString &icon,
                        const std::vector<QString> &button_texts, const int minimum_button_width = 142) : AbstractControlSP_SELECTOR(title, desc, icon), button_texts(button_texts) {
-    const QString style = R"(
-      QPushButton {
-        border-radius: 9px;
-        font-size: 23px;
-        font-weight: 213;
-        height: 79px;
-        padding: 0 12 0 12;
-        color: #FFFFFF;
-      }
-      QPushButton:pressed {
-        background-color: #4a4a4a;
-      }
-      QPushButton:checked:enabled {
-        background-color: #696868;
-      }
-      QPushButton:disabled {
-        color: #33FFFFFF;
-      }
-      QPushButton:checked:disabled {
-        background-color: #121212;
-        color: #33FFFFFF;
-      }
-    )";
+    const QString style = QString("QPushButton { border-radius: %1px; font-size: %2px; font-weight: 213; height: %3px; padding: 0 %4 0 %4; color: #FFFFFF; } QPushButton:pressed { background-color: #4a4a4a; } QPushButton:checked:enabled { background-color: #696868; } QPushButton:disabled { color: #33FFFFFF; } QPushButton:checked:disabled { background-color: #121212; color: #33FFFFFF; }")
+      .arg(ui_scale::px_w(9)).arg(ui_scale::px_w(23)).arg(ui_scale::px_h(60)).arg(ui_scale::px_w(12));
     key = param.toStdString();
     int value = atoi(params.get(key).c_str());
 
@@ -254,7 +234,7 @@ public:
       button->setCheckable(true);
       button->setChecked(i == value);
       button->setStyleSheet(style);
-      button->setMinimumWidth(minimum_button_width);
+      button->setMinimumWidth(ui_scale::px_w(minimum_button_width));
       if (i == 0) hlayout->addSpacing(1);
       hlayout->addWidget(button);
       button_group->addButton(button, i);
@@ -320,7 +300,7 @@ protected:
 
     // Calculate the total width and height for the background rectangle
     int w = 0;
-    int h = 55;
+    int h = ui_scale::px_h(60);
 
     for (int i = 0; i < hlayout->count(); ++i) {
       QPushButton *button = qobject_cast<QPushButton *>(hlayout->itemAt(i)->widget());
@@ -425,27 +405,11 @@ private:
 public:
   OptionControlSP(const QString &param, const QString &title, const QString &desc, const QString &icon,
                   const MinMaxValue &range, const int per_value_change = 1) : _title(title), AbstractControlSP_SELECTOR(title, desc, icon) {
-    const QString style = R"(
-      QPushButton {
-        border-radius: 9px;
-        font-size: 28px;
-        font-weight: 237;
-        width: 70px;
-        height: 79px;
-        padding: -1 12 1 12;
-        color: #FFFFFF;
-        font-weight: bold;
-      }
-      QPushButton:pressed {
-        color: #5C5C5C;
-      }
-      QPushButton:disabled {
-        color: #5C5C5C;
-      }
-    )";
+    const QString style = QString("QPushButton { border-radius: %1px; font-size: %2px; font-weight: 237; width: %3px; height: %4px; padding: -1 %5 1 %5; color: #FFFFFF; font-weight: bold; } QPushButton:pressed { color: #5C5C5C; } QPushButton:disabled { color: #5C5C5C; }")
+      .arg(ui_scale::px_w(9)).arg(ui_scale::px_w(28)).arg(ui_scale::px_w(70)).arg(ui_scale::px_h(60)).arg(ui_scale::px_w(12));
 
     label.setStyleSheet(label_enabled_style);
-    label.setFixedWidth(142);
+    label.setFixedWidth(ui_scale::px_w(142));
     label.setAlignment(Qt::AlignCenter);
 
     const std::vector<QString> button_texts{"－", "＋"};
@@ -511,7 +475,7 @@ protected:
 
     // Calculate the total width and height for the background rectangle
     int w = 0;
-    int h = 55;
+    int h = ui_scale::px_h(60);
 
     for (int i = 0; i < hlayout->count(); ++i) {
       QWidget *widget = qobject_cast<QWidget *>(hlayout->itemAt(i)->widget());
@@ -556,16 +520,8 @@ class PushButtonSP : public QPushButton {
 
 public:
   PushButtonSP(const QString &text, const int minimum_button_width = 379, QWidget *parent = nullptr, const QString &param = "") : QPushButton(text, parent) {
-    buttonStyle = R"(
-      QPushButton {
-        border-radius: 9px;
-        font-size: 23px;
-        font-weight: 213;
-        height: 79px;
-        padding: 0 12px 0 12px;
-        color: #FFFFFF;
-      }
-    )";
+    buttonStyle = QString("QPushButton { border-radius: %1px; font-size: %2px; font-weight: 213; height: %3px; padding: 0 %4px 0 %4px; color: #FFFFFF; }")
+        .arg(ui_scale::px_w(9)).arg(ui_scale::px_w(23)).arg(ui_scale::px_h(60)).arg(ui_scale::px_w(12));
 
     if (!param.isEmpty()) {
       key = param.toStdString();
@@ -574,7 +530,7 @@ public:
       updateStyle(false);
     }
 
-    setFixedWidth(minimum_button_width);
+    setFixedWidth(ui_scale::px_w(minimum_button_width));
   }
 
   void refresh() {
@@ -628,6 +584,6 @@ class PanelBackButton : public QPushButton {
 public:
   PanelBackButton(const QString &label = "Back", QWidget *parent = nullptr) : QPushButton(label, parent) {
     setObjectName("back_btn");
-    setFixedSize(189, 53);
+    setFixedSize(ui_scale::px_w(189), ui_scale::px_h(53));
   }
 };

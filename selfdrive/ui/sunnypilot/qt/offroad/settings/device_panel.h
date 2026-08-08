@@ -9,6 +9,7 @@
 
 #include "selfdrive/ui/sunnypilot/qt/offroad/settings/settings.h"
 #include "selfdrive/ui/sunnypilot/qt/widgets/controls.h"
+#include "selfdrive/ui/ui_scale.h"
 
 class DevicePanelSP : public DevicePanel {
   Q_OBJECT
@@ -24,63 +25,15 @@ private:
   std::map<QString, PushButtonSP*> buttons;
   PushButtonSP *offroadBtn;
 
-  const QString alwaysOffroadStyle = R"(
-    PushButtonSP {
-      border-radius: 9px;
-      font-size: 23px;
-      font-weight: 166;
-      height: 55px;
-      padding: 0 9px 0 9px;
-      color: #FFFFFF;
-      background-color: #393939;
-    }
-    PushButtonSP:pressed {
-      background-color: #4A4A4A;
-    }
-  )";
+  const QString alwaysOffroadStyle = QString("PushButtonSP { border-radius: %1px; font-size: %2px; font-weight: 166; height: %3px; padding: 0 %4px 0 %4px; color: #FFFFFF; background-color: #393939; } PushButtonSP:pressed { background-color: #4A4A4A; }")
+    .arg(ui_scale::px_w(9)).arg(ui_scale::px_w(23)).arg(ui_scale::px_h(60)).arg(ui_scale::px_w(9));
 
-  const QString autoOffroadStyle = R"(
-    PushButtonSP {
-      border-radius: 9px;
-      font-size: 23px;
-      font-weight: 166;
-      height: 55px;
-      padding: 0 9px 0 9px;
-      color: #FFFFFF;
-      background-color: #E22C2C;
-    }
-    PushButtonSP:pressed {
-      background-color: #FF2424;
-    }
-  )";
+  const QString autoOffroadStyle = QString("PushButtonSP { border-radius: %1px; font-size: %2px; font-weight: 166; height: %3px; padding: 0 %4px 0 %4px; color: #FFFFFF; background-color: #E22C2C; } PushButtonSP:pressed { background-color: #FF2424; }")
+    .arg(ui_scale::px_w(9)).arg(ui_scale::px_w(23)).arg(ui_scale::px_h(60)).arg(ui_scale::px_w(9));
 
-  const QString rebootButtonStyle = R"(
-    PushButtonSP {
-      border-radius: 9px;
-      font-size: 23px;
-      font-weight: 166;
-      height: 55px;
-      padding: 0 9px 0 9px;
-      color: #FFFFFF;
-      background-color: #393939;
-    }
-    PushButtonSP:pressed {
-      background-color: #4A4A4A;
-    }
-  )";
+  const QString rebootButtonStyle = QString("PushButtonSP { border-radius: %1px; font-size: %2px; font-weight: 166; height: %3px; padding: 0 %4px 0 %4px; color: #FFFFFF; background-color: #393939; } PushButtonSP:pressed { background-color: #4A4A4A; }")
+    .arg(ui_scale::px_w(9)).arg(ui_scale::px_w(23)).arg(ui_scale::px_h(60)).arg(ui_scale::px_w(9));
 
-  const QString powerOffButtonStyle = R"(
-    PushButtonSP {
-      border-radius: 9px;
-      font-size: 23px;
-      font-weight: 166;
-      height: 55px;
-      padding: 0 9px 0 9px;
-      color: #FFFFFF;
-      background-color: #E22C2C;
-    }
-    PushButtonSP:pressed {
-      background-color: #FF2424;
-    }
-  )";
+  const QString powerOffButtonStyle = QString("PushButtonSP { border-radius: %1px; font-size: %2px; font-weight: 166; height: %3px; padding: 0 %4px 0 %4px; color: #FFFFFF; background-color: #E22C2C; } PushButtonSP:pressed { background-color: #FF2424; }")
+    .arg(ui_scale::px_w(9)).arg(ui_scale::px_w(23)).arg(ui_scale::px_h(60)).arg(ui_scale::px_w(9));
 };
