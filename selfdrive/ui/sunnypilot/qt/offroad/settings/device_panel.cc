@@ -8,6 +8,7 @@
 #include "selfdrive/ui/sunnypilot/qt/offroad/settings/device_panel.h"
 
 #include "common/watchdog.h"
+#include "selfdrive/ui/ui_scale.h"
 #include "selfdrive/ui/qt/qt_window.h"
 
 DevicePanelSP::DevicePanelSP(SettingsWindowSP *parent) : DevicePanel(parent) {

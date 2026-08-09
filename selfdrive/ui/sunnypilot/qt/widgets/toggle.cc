@@ -9,6 +9,8 @@
 
 #include <QPainter>
 
+#include "selfdrive/ui/ui_scale.h"
+
 ToggleSP::ToggleSP(QWidget *parent) : Toggle(parent) {
   _height_rect = 38;
 }
