@@ -40,7 +40,8 @@ ScrollView::ScrollView(QWidget *w, QWidget *parent) : QScrollArea(parent) {
   sp.setScrollMetric(QScrollerProperties::VerticalOvershootPolicy, QVariant::fromValue<QScrollerProperties::OvershootPolicy>(QScrollerProperties::OvershootAlwaysOff));
   sp.setScrollMetric(QScrollerProperties::HorizontalOvershootPolicy, QVariant::fromValue<QScrollerProperties::OvershootPolicy>(QScrollerProperties::OvershootAlwaysOff));
   sp.setScrollMetric(QScrollerProperties::MousePressEventDelay, 0.01);
-  scroller->grabGesture(this->viewport(), QScroller::TouchGesture | QScroller::LeftMouseButtonGesture);
+  // 触摸屏用滑动手势；鼠标用户使用滚动条（ScrollBarAsNeeded）
+  scroller->grabGesture(this->viewport(), QScroller::TouchGesture);
   scroller->setScrollerProperties(sp);
 }
 
