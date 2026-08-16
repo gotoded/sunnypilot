@@ -74,8 +74,6 @@ AbstractControlSP::AbstractControlSP(const QString &title, const QString &desc, 
       description->setVisible(!description->isVisible());
     }
   });
-
-  main_layout->addStretch();
 }
 
 void AbstractControlSP::hideEvent(QHideEvent *e) {
@@ -159,8 +157,6 @@ AbstractControlSP_SELECTOR::AbstractControlSP_SELECTOR(const QString &title, con
   description->setWordWrap(true);
   description->setVisible(false);
   main_layout->addWidget(description);
-
-  main_layout->addStretch();
 }
 
 void AbstractControlSP_SELECTOR::hideEvent(QHideEvent *e) {
