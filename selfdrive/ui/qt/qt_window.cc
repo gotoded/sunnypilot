@@ -2,15 +2,19 @@
 
 void setMainWindow(QWidget *w) {
   const float scale = util::getenv("SCALE", 1.0f);
-  const QSize sz = QGuiApplication::primaryScreen()->size();
+  // 获取当前屏幕大小，主窗口自适应全屏
+  const QSize sz = deviceScreenSize();
 
-  if (Hardware::PC() && scale == 1.0 && !(sz - DEVICE_SCREEN_SIZE).isValid()) {
+  if (scale == 1.0) {
     w->setMinimumSize(QSize(240, 180)); // allow resize smaller than fullscreen
-    w->setMaximumSize(DEVICE_SCREEN_SIZE);
+    w->setMaximumSize(sz);
     w->resize(sz);
   } else {
-    w->setFixedSize(DEVICE_SCREEN_SIZE * scale);
+    w->setFixedSize(sz * scale);
   }
+
+  // 获取屏幕大小，自适应全屏
+  w->setWindowState(Qt::WindowFullScreen);
   w->show();
 
 #ifdef QCOM2

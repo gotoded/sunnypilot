@@ -10,8 +10,9 @@
 //   buttonStyle = QString("QPushButton { font-size: %1px; height: %2px; }")
 //     .arg(ui_scale::px_w(23)).arg(ui_scale::px_h(60));
 //
-// 换分辨率时只需调整 DEVICE_SCREEN_SIZE（窗口尺寸），所有尺寸自动跟随缩放。
-// 例如 DEVICE_SCREEN_SIZE 改为 1280x720 后，scale = (1.25, 1.2)，全部 UI 自动放大。
+// 换分辨率/全屏自适应时无需手动调整，缩放因子自动跟随主屏幕实际分辨率
+// （deviceScreenSize() 返回当前主屏幕尺寸）。例如屏幕为 1280x720 时，
+// scale = (1.25, 1.2)，全部 UI 自动放大铺满屏幕。
 
 #include <algorithm>
 #include <cmath>
@@ -24,14 +25,14 @@ namespace ui_scale {
 constexpr int UI_BASE_WIDTH = 1024;
 constexpr int UI_BASE_HEIGHT = 600;
 
-// 水平缩放因子：当前窗口宽度 / 设计基准宽度
+// 水平缩放因子：当前屏幕宽度 / 设计基准宽度
 inline float scale_w() {
-  return (float)DEVICE_SCREEN_SIZE.width() / (float)UI_BASE_WIDTH;
+  return (float)deviceScreenSize().width() / (float)UI_BASE_WIDTH;
 }
 
-// 垂直缩放因子：当前窗口高度 / 设计基准高度
+// 垂直缩放因子：当前屏幕高度 / 设计基准高度
 inline float scale_h() {
-  return (float)DEVICE_SCREEN_SIZE.height() / (float)UI_BASE_HEIGHT;
+  return (float)deviceScreenSize().height() / (float)UI_BASE_HEIGHT;
 }
 
 // 按水平比例缩放（用于字号、宽度、水平间距）
