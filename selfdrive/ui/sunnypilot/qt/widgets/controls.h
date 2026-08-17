@@ -363,6 +363,22 @@ public:
     }
   }
 
+  // 方案1：重写 sizeHint，返回内容真实所需高度。
+  // QScrollArea 以内容 widget 的 sizeHint 作为滚动范围上限，若返回高度小于内容实际
+  // 高度（例如描述文字换行后变高），滚动到底部时内容会被裁剪。这里优先按当前宽度用
+  // heightForWidth 重新计算高度，保证滚动范围覆盖全部内容。
+  QSize sizeHint() const override {
+    QSize s = inner_layout.sizeHint();
+    if (inner_layout.hasHeightForWidth() && width() > 0) {
+      s.setHeight(qMax(s.height(), inner_layout.heightForWidth(width())));
+    }
+    return s;
+  }
+
+  QSize minimumSizeHint() const override {
+    return inner_layout.minimumSize();
+  }
+
 private:
   void paintEvent(QPaintEvent *) override {
     QPainter p(this);
