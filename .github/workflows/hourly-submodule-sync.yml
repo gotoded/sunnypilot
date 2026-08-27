@@ -1,0 +1,375 @@
+name: Hourly Submodule Sync
+
+on:
+  schedule:
+    # 每小时整点（UTC）运行一次 → 对应本地时间（UTC+8）的 08:00/09:00/... 整点
+    - cron: '0 * * * *'
+  workflow_dispatch:
+    inputs:
+      submodules:
+        description: '子模块列表（路径，逗号分隔），留空=更新全部。例如：opendbc_repo,panda,msgq_repo'
+        required: false
+        default: ''
+      branch:
+        description: '基准分支，留空=当前工作流默认分支（RK3588）'
+        required: false
+        default: ''
+      only_check:
+        description: '仅检查不提交（dry-run：检测是否有更新，写 summary，但不 commit/PR）'
+        required: false
+        type: choice
+        options: ['no', 'yes']
+        default: 'no'
+
+# 同一分支同一时间只允许一个同步实例跑，避免多个 cron 并发 commit/PR
+concurrency:
+  group: submodule-sync-${{ github.ref_name }}
+  cancel-in-progress: false
+
+env:
+  # 强制 GitHub Hosted JS actions 走 Node 24（针对 actions/checkout@v5 的未来兼容与告警消除）
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync:
+    name: Sync & commit submodule updates
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Resolve target branch
+        id: target
+        shell: bash
+        run: |
+          set -eu
+          INPUT_BRANCH="${{ github.event.inputs.branch }}"
+          if [[ -n "$INPUT_BRANCH" ]]; then
+            TARGET="$INPUT_BRANCH"
+          else
+            TARGET="${GITHUB_REF_NAME}"
+            if [[ -z "$TARGET" || "$TARGET" == "refs/heads/"* ]]; then
+              TARGET="${GITHUB_REF_NAME#refs/heads/}"
+            fi
+            # GitHub scheduled event runs against default branch; GITHUB_REF_NAME is already short
+          fi
+          # Sanity: ensure origin/$TARGET exists
+          git ls-remote --exit-code --heads "https://github.com/${GITHUB_REPOSITORY}.git" "refs/heads/${TARGET}" >/dev/null || {
+            echo "::error::基准分支 origin/${TARGET} 不存在，请在 workflow_dispatch 里手动指定正确分支"
+            exit 2
+          }
+          echo "target=${TARGET}" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout base repo (no submodules)
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ steps.target.outputs.target }}
+          submodules: false
+          fetch-depth: 1
+          # 注意：这里不使用 token 注入到全局 HTTP 头，避免第三方子模块 (commaai/*, sunnypilot/*)
+          # 被错误地带上 GITHUB_TOKEN，从而返回 403。
+          persist-credentials: false
+
+      - name: Tune git HTTP (avoid flaky 128 on GitHub large fetches)
+        shell: bash
+        run: |
+          set -eu
+          git config --global http.version HTTP/1.1
+          git config --global http.lowSpeedLimit 1000
+          git config --global http.lowSpeedTime 60
+          git config --global protocol.version 2
+          # 子模块用匿名 HTTPS 访问（不要透传 GITHUB_TOKEN 给第三方仓库）
+          git config --global --unset-all http.https://github.com/.extraheader || true
+          git config --global credential.helper '' || true
+
+      - name: Init + shallow fetch submodules
+        shell: bash
+        run: |
+          set -eu
+          # shallow 初始化；后面按每个子模块再 fetch 指定分支
+          git submodule sync --recursive
+          git submodule update --init --depth 50 --jobs 4
+
+      - name: List allowed submodules (from .gitmodules)
+        id: list
+        shell: bash
+        run: |
+          set -eu
+          ALLOWED=$(git config -f .gitmodules --get-regexp '^submodule\..*\.path$' \
+                    | awk '{print $NF}' | sort -u | tr '\n' ',' | sed 's/,$//')
+          echo "allowed=${ALLOWED}" >> "$GITHUB_OUTPUT"
+
+          INPUT="${{ github.event.inputs.submodules }}"
+          if [[ -z "$INPUT" ]]; then
+            SELECTED="$ALLOWED"
+          else
+            # Trim spaces; filter to allowed paths
+            SELECTED=""
+            IFS=',' read -ra ARR <<< "$INPUT"
+            for i in "${ARR[@]}"; do
+              i="${i// /}"
+              [[ -z "$i" ]] && continue
+              if [[ ",${ALLOWED}," == *",${i},"* ]]; then
+                SELECTED="${SELECTED},${i}"
+              else
+                echo "::warning::忽略不在 .gitmodules 中的子模块名: ${i}"
+              fi
+            done
+            SELECTED="${SELECTED#,}"
+          fi
+          if [[ -z "$SELECTED" ]]; then
+            echo "::error::没有可处理的有效子模块"
+            exit 3
+          fi
+          echo "selected=${SELECTED}" >> "$GITHUB_OUTPUT"
+
+      - name: Update submodules and collect changes
+        id: changes
+        shell: bash
+        env:
+          TARGET_BRANCH: ${{ steps.target.outputs.target }}
+          SELECTED_SM: ${{ steps.list.outputs.selected }}
+        run: |
+          set -eu
+          STAMP="$(date -u +%Y%m%d-%H%M%S)"
+          echo "stamp=${STAMP}" >> "$GITHUB_OUTPUT"
+          LOG_DIR="${RUNNER_TEMP}/submodule-sync-logs"
+          mkdir -p "$LOG_DIR"
+          echo "logdir=${LOG_DIR}" >> "$GITHUB_OUTPUT"
+
+          UPDATED_NAMES=""
+          UPDATED_PATHS=""
+          UPDATED_ANY=0
+
+          IFS=',' read -ra SM_ARR <<< "$SELECTED_SM"
+          for SM in "${SM_ARR[@]}"; do
+            [[ -z "$SM" ]] && continue
+            echo "=== Processing ${SM} ==="
+
+            # 1) 主仓库 index 上登记的 gitlink 指针（最稳定来源）
+            BEFORE=""
+            if STAGE_LINE="$(git ls-files --stage -- "$SM" 2>/dev/null | head -n1)"; then
+              # format: <mode> <sha> <stage>\t<path>
+              BEFORE="$(awk '{print $2}' <<< "$STAGE_LINE")"
+            fi
+            if [[ -z "$BEFORE" ]]; then
+              BEFORE="$(git submodule status -- "$SM" | awk '{gsub(/^[-+U]/,"",$1); print $1}' | head -n1)" || true
+            fi
+            if [[ -z "$BEFORE" ]]; then
+              echo "::warning::无法读取 ${SM} 的 before 指针，跳过"
+              continue
+            fi
+            SHORT_BEFORE="${BEFORE:0:9}"
+            echo "  @ before=${BEFORE}"
+
+            # 2) 子模块声明的 url / branch
+            SM_CFG_KEY=""
+            while IFS= read -r line; do
+              # submodule.<name>.path <value>
+              cfg_path="${line#* }"
+              if [[ "$cfg_path" == "$SM" ]]; then
+                SM_CFG_KEY="${line#submodule.}"
+                SM_CFG_KEY="${SM_CFG_KEY%.path*}"
+                break
+              fi
+            done < <(git config -f .gitmodules --get-regexp '^submodule\..*\.path$')
+            SM_URL="$(git config -f .gitmodules --get "submodule.${SM_CFG_KEY}.url" || true)"
+            SM_BRANCH="$(git config -f .gitmodules --get "submodule.${SM_CFG_KEY}.branch" || true)"
+
+            # 3) Fetch 子模块（匿名 HTTPS），并确定目标 TARGET_SHA = origin/<SM_BRANCH> HEAD；
+            #    若 .gitmodules 没写 branch，就取子模块远程默认分支（通过 FETCH_HEAD 解析或 remote show）
+            TARGET_SHA=""
+            FETCH_OK=0
+            (set +e
+              if [[ -n "$SM_BRANCH" ]]; then
+                git -C "$SM" -c http.extraheader="" -c credential.helper="" \
+                  fetch --depth 50 origin "refs/heads/${SM_BRANCH}:refs/remotes/origin/${SM_BRANCH}" 2>&1 | tail -n 5
+                if [[ ${PIPESTATUS[0]} -eq 0 ]]; then
+                  TARGET_SHA="$(git -C "$SM" rev-parse --verify "refs/remotes/origin/${SM_BRANCH}" 2>/dev/null || true)"
+                  [[ -n "$TARGET_SHA" ]] && FETCH_OK=1
+                fi
+              fi
+              if [[ $FETCH_OK -eq 0 ]]; then
+                git -C "$SM" -c http.extraheader="" -c credential.helper="" \
+                  fetch --depth 50 origin 2>&1 | tail -n 5
+                if [[ ${PIPESTATUS[0]} -eq 0 ]]; then
+                  # FETCH_HEAD 第一行格式: <sha>\t\t<flag>\t<ref>
+                  TARGET_SHA="$(awk 'NR==1{print $1}' "$(git -C "$SM" rev-parse --git-dir)/FETCH_HEAD")"
+                  [[ -n "$TARGET_SHA" ]] && FETCH_OK=1
+                fi
+              fi
+            ) || true
+
+            if [[ $FETCH_OK -eq 0 ]]; then
+              echo "::error::fetch failed for ${SM} (url=${SM_URL})"
+              exit 2
+            fi
+            if [[ -z "$TARGET_SHA" ]]; then
+              echo "::error::target SHA not resolved for ${SM}"
+              exit 3
+            fi
+            SHORT_AFTER="${TARGET_SHA:0:9}"
+
+            # 4) Checkout submodule to latest tip (detached)
+            (set +e; git -C "$SM" checkout --detach "$TARGET_SHA" 2>&1 | tail -n 2) || true
+
+            # 5) Stage the gitlink pointer update
+            BEFORE_STAGED="$BEFORE"
+            AFTER_STAGED="$(git -C "$SM" rev-parse HEAD 2>/dev/null || echo "$TARGET_SHA")"
+            SHORT_AFTER_STAGED="${AFTER_STAGED:0:9}"
+            git add -- "$SM"
+
+            # 6) Compare; if equal, no change
+            if [[ "$BEFORE_STAGED" == "$AFTER_STAGED" ]]; then
+              echo "  子模块 ${SM} 已是最新 (${SHORT_AFTER_STAGED})."
+              continue
+            fi
+
+            UPDATED_ANY=1
+            if [[ -z "$UPDATED_NAMES" ]]; then
+              UPDATED_NAMES="$SM"
+              UPDATED_PATHS="$SM"
+            else
+              UPDATED_NAMES="${UPDATED_NAMES}, ${SM}"
+              UPDATED_PATHS="${UPDATED_PATHS} ${SM}"
+            fi
+
+            # 7) Range log → markdown file (safely under LOG_DIR; don't pass through GITHUB_OUTPUT multiline)
+            LOG_FILE="${LOG_DIR}/$(echo "$SM" | tr '/' '_').log"
+            {
+              echo "RANGE: ${SHORT_BEFORE}..${SHORT_AFTER_STAGED}"
+              echo "URL: ${SM_URL}"
+              echo
+              (set +e
+                RANGE_LOG=""
+                RANGE_LOG="$(git -C "$SM" log --oneline --decorate "${BEFORE_STAGED}..${AFTER_STAGED}" 2>/dev/null)"
+                if [[ $? -ne 0 || -z "$RANGE_LOG" ]]; then
+                  # history not fully shared/shallow: fall back to "last N commits on new tip"
+                  RANGE_LOG="$(git -C "$SM" log --oneline -n 20 "${AFTER_STAGED}" 2>/dev/null)" || true
+                fi
+                if [[ -z "$RANGE_LOG" ]]; then
+                  RANGE_LOG="(no commits in range or shallow fetch incomplete)"
+                fi
+                # head without pipefail trap
+                i=0
+                while IFS= read -r ln; do
+                  printf '%s\n' "$ln"
+                  i=$((i+1))
+                  [[ $i -ge 20 ]] && break
+                done <<< "$RANGE_LOG"
+              ) || true
+            } > "$LOG_FILE"
+            echo "  -> 更新：${SHORT_BEFORE}..${SHORT_AFTER_STAGED}，日志写入 ${LOG_FILE}"
+          done
+
+          echo "updated_any=${UPDATED_ANY}" >> "$GITHUB_OUTPUT"
+          echo "updated_names=${UPDATED_NAMES}" >> "$GITHUB_OUTPUT"
+          echo "updated_paths=${UPDATED_PATHS}" >> "$GITHUB_OUTPUT"
+
+      - name: Job summary (dry-run or no-change readable result)
+        if: always()
+        shell: bash
+        run: |
+          set -eu
+          LOG_DIR="${{ steps.changes.outputs.logdir }}"
+          TARGET="${{ steps.target.outputs.target }}"
+          SELECTED="${{ steps.list.outputs.selected }}"
+          {
+            echo "### Hourly submodule sync — target branch: \`${TARGET}\`"
+            echo
+            echo "- scope (selected): \`${SELECTED}\`"
+            echo "- updated_any: ${{ steps.changes.outputs.updated_any }}"
+            echo "- updated: \`${{ steps.changes.outputs.updated_names }}\`"
+            echo
+            if [[ -d "$LOG_DIR" ]]; then
+              shopt -s nullglob
+              for f in "$LOG_DIR"/*.log; do
+                title="$(basename "$f" .log)"
+                echo "#### ${title}"
+                echo '```'
+                cat "$f"
+                echo '```'
+                echo
+              done
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Create sync branch + commit + Pull Request
+        if: steps.changes.outputs.updated_any == '1' && github.event.inputs.only_check != 'yes'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TARGET_BRANCH: ${{ steps.target.outputs.target }}
+          STAMP: ${{ steps.changes.outputs.stamp }}
+          UPDATED_NAMES: ${{ steps.changes.outputs.updated_names }}
+          UPDATED_PATHS: ${{ steps.changes.outputs.updated_paths }}
+          LOG_DIR: ${{ steps.changes.outputs.logdir }}
+          BASE_REPO: ${{ github.repository }}
+        run: |
+          set -eu
+          # 把 staged 的子模块指针在跨分支切换时携带；避免 checkout -b 后 index 丢失
+          git stash push -- $UPDATED_PATHS >/dev/null || true
+          NEW_BRANCH="chore/submodule-sync-${STAMP}"
+          git fetch --depth 1 origin "refs/heads/${TARGET_BRANCH}:refs/remotes/origin/${TARGET_BRANCH}"
+          git checkout -b "$NEW_BRANCH" "origin/${TARGET_BRANCH}"
+          git stash pop >/dev/null || true
+          git add -- $UPDATED_PATHS
+
+          git config user.name  'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+
+          # 规范化标题串（逗号/空格替换成短横线，列表简洁）
+          TITLE_LIST="$(sed 's/, */-/g;s/[ _]/-/g' <<< "$UPDATED_NAMES" | tr -s '-')"
+          COMMIT_MSG="chore(submodules): sync ${TITLE_LIST} @ ${STAMP}"
+          git commit -m "$COMMIT_MSG"
+
+          git push --set-upstream origin "$NEW_BRANCH"
+
+          # 组装 PR body：逐子模块读日志文件，规避多行 shell 变量展开陷阱
+          BODY_FILE="${RUNNER_TEMP}/pr-body.md"
+          {
+            echo "自动同步以下子模块到上游分支最新 commit："
+            echo
+            echo "- 同步范围：\`${UPDATED_NAMES}\`"
+            echo "- 触发：\`${GITHUB_EVENT_NAME}\` (workflow run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID})"
+            echo
+            shopt -s nullglob
+            for f in "$LOG_DIR"/*.log; do
+              title="$(basename "$f" .log)"
+              RANGE_LINE="$(head -n 1 "$f")"
+              URL_LINE="$(sed -n '2p' "$f")"
+              REST="$(sed -n '4,$p' "$f")"
+              RANGE_SHORT="${RANGE_LINE#RANGE: }"
+              URL_SHORT="${URL_LINE#URL: }"
+              SHORT_BEFORE="${RANGE_SHORT%%..*}"
+              SHORT_AFTER="${RANGE_SHORT##*..}"
+              # commit 数量估算：取 REST 中去掉空行的行数
+              N="$(grep -cve '^$' <<< "$REST" 2>/dev/null || true)"
+              N_DISP="${N:-unknown}"
+              echo "### ${title}  \`${SHORT_BEFORE}\` → \`${SHORT_AFTER}\` (约 +${N_DISP} commits)"
+              echo
+              echo "- 子模块仓库: ${URL_SHORT}"
+              echo
+              echo "<details><summary>前 20 条 commit 明细</summary>"
+              echo
+              echo '```'
+              printf '%s\n' "$REST"
+              echo '```'
+              echo
+              echo "</details>"
+              echo
+            done
+          } > "$BODY_FILE"
+
+          PR_TITLE="chore(submodules): sync ${TITLE_LIST} @ ${STAMP}"
+          gh pr create \
+            --base "${TARGET_BRANCH}" \
+            --head "${NEW_BRANCH}" \
+            --title "$PR_TITLE" \
+            --body-file "$BODY_FILE" \
+            --label dependencies --label submodules || {
+              echo "::error::gh pr create 失败，请检查 token 的 pull-requests: write 权限"
+              exit 4
+            }
