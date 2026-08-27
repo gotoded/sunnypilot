@@ -451,6 +451,26 @@ jobs:
           set -eu
           # 临时关闭 auto-gc，避免 PR 步骤的 fetch/push 触发后台 repack 与并发竞争
           git config --global gc.auto 0 || true
+
+          # 本步骤前面的 base-fetch (TARGET_BRANCH) 与后面 push / gh pr create 都需要对 gotoded/sunnypilot
+          # 仓库鉴权；但子模块 step 中为了避免 GITHUB_TOKEN 泄露到第三方仓库，我们显式全局清了
+          # credential/extraheader，并让 checkout 以 persist-credentials=false 匿名落盘 origin。
+          # 因此在这个 step 的开头临时把 origin 切到带 x-access-token 的 HTTPS URL；
+          # 等 PR 创建结束再把 origin 还原为匿名 URL（防御性兜底，避免 token 残留在 runner 日志）。
+          ANONYMOUS_ORIGIN="$(git remote get-url origin)"
+          AUTHED_ORIGIN="https://x-access-token:${GH_TOKEN}@github.com/${BASE_REPO}.git"
+          if [[ -z "$GH_TOKEN" ]]; then
+            echo "::error::GH_TOKEN 为空，无法为 push/PR 步骤提供鉴权，请检查 workflow permissions / env 注入"
+            exit 5
+          fi
+          git remote set-url origin "$AUTHED_ORIGIN"
+          cleanup_auth() {
+            # 无论成功失败，尽量把 origin 切回匿名 URL，并清掉任何可能残留的 per-URL extraheader
+            git remote set-url origin "$ANONYMOUS_ORIGIN" >/dev/null 2>&1 || true
+            git config --local --unset-all "http.https://github.com/${BASE_REPO}.extraheader" >/dev/null 2>&1 || true
+          }
+          trap cleanup_auth EXIT
+
           # 把 staged 的子模块指针在跨分支切换时携带；避免 checkout -b 后 index 丢失
           git stash push -- $UPDATED_PATHS >/dev/null 2>&1 || true
           NEW_BRANCH="chore/submodule-sync-${STAMP}"
@@ -467,7 +487,21 @@ jobs:
           COMMIT_MSG="chore(submodules): sync ${TITLE_LIST} @ ${STAMP}"
           git commit -m "$COMMIT_MSG"
 
-          git push --set-upstream origin "$NEW_BRANCH"
+          # 注意：origin 已在本 step 顶部切换为 x-access-token@ 形式；仍保留最小的 push 重试。
+          ok=0
+          for i in 1 2 3; do
+            echo "  [push $i/3] branch=${NEW_BRANCH}"
+            if git push --set-upstream origin "$NEW_BRANCH"; then
+              ok=1
+              break
+            fi
+            echo "::warning::push attempt $i failed, retrying after $(( i * 3 ))s..."
+            sleep $(( i * 3 ))
+          done
+          if [[ $ok -ne 1 ]]; then
+            echo "::error::git push 最终失败（3 次重试）：无法推送 ${NEW_BRANCH} 到 origin。上一轮常见报错：需要 Username for 'https://github.com' 时请确认 GH_TOKEN 已写入 origin URL"
+            exit 6
+          fi
 
           # 组装 PR body：逐子模块读日志文件，规避多行 shell 变量展开陷阱
           BODY_FILE="${RUNNER_TEMP}/pr-body.md"
