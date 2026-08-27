@@ -121,7 +121,7 @@ jobs:
                 SELECTED="${SELECTED},${i}"
               else
                 echo "::warning::忽略不在 .gitmodules 中的子模块名: ${i}"
-              fi
+              done
             done
             SELECTED="${SELECTED#,}"
           fi
@@ -545,6 +545,16 @@ jobs:
               echo
             done
           } > "$BODY_FILE"
+
+          # ========== 修复：动态创建标签（如果不存在） ==========
+          echo "检查并创建必要的标签（dependencies, submodules）..."
+          for label in dependencies submodules; do
+            if ! gh label list --limit 100 | grep -q "^$label$"; then
+              echo "标签 $label 不存在，正在创建..."
+              gh label create "$label" --description "Auto-created by workflow" --color "E99695"
+            fi
+          done
+          # ========== 修复结束 ==========
 
           PR_TITLE="chore(submodules): sync ${TITLE_LIST} @ ${STAMP}"
           gh pr create \
