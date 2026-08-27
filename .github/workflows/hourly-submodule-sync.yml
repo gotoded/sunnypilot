@@ -34,6 +34,12 @@ permissions:
   contents: write
   pull-requests: write
 
+# 统一 shell 行为：显式声明 bash，且在所有 step.run 第一行自行 set -eu（避免 runner 默认带的
+# -o pipefail 让 "git … 2>&1 | tail" 这种合法管道的 SIGPIPE 被当成失败传播）。
+defaults:
+  run:
+    shell: bash
+
 jobs:
   sync:
     name: Sync & commit submodule updates
@@ -127,21 +133,92 @@ jobs:
 
       - name: Update submodules and collect changes
         id: changes
-        shell: bash
         env:
           TARGET_BRANCH: ${{ steps.target.outputs.target }}
           SELECTED_SM: ${{ steps.list.outputs.selected }}
         run: |
+          # 注意：不要启用 pipefail；我们会通过 PIPESTATUS/变量捕获/临时文件来判定关键命令真实退出码。
           set -eu
           STAMP="$(date -u +%Y%m%d-%H%M%S)"
           echo "stamp=${STAMP}" >> "$GITHUB_OUTPUT"
           LOG_DIR="${RUNNER_TEMP}/submodule-sync-logs"
-          mkdir -p "$LOG_DIR"
+          DEBUG_DIR="${RUNNER_TEMP}/submodule-sync-debug"
+          mkdir -p "$LOG_DIR" "$DEBUG_DIR"
           echo "logdir=${LOG_DIR}" >> "$GITHUB_OUTPUT"
 
           UPDATED_NAMES=""
           UPDATED_PATHS=""
           UPDATED_ANY=0
+          FAILED_NAMES=""
+          FAILED_ANY=0
+
+          # 安全地将子模块 url 中任何潜在的 GITHUB_TOKEN 式授权信息全部剔除，保证匿名 HTTPS。
+          sm_git() {
+            local dir="$1"; shift
+            git -C "$dir" \
+              -c http.https://github.com/.extraheader= \
+              -c http.extraheader= \
+              -c credential.helper= \
+              -c gc.auto=0 \
+              "$@"
+          }
+
+          # 返回值：0 成功，非 0 失败；同时会把结果写到 /tmp 共享文件。
+          run_fetch_with_retry() {
+            local dir="$1" url="$2" refspec="$3"
+            local max=3 i=0 rc=1
+            local err_file="${DEBUG_DIR}/$(echo "$dir" | tr '/' '_').err"
+            : > "$err_file"
+            for ((i=1; i<=max; i++)); do
+              echo "  [fetch $i/$max] dir=$dir refspec=${refspec:-<default>}"
+              local tmp_out
+              tmp_out="$(mktemp)"
+              if [[ -n "$refspec" ]]; then
+                # 精确分支 fetch
+                sm_git "$dir" fetch --depth 50 origin "$refspec" >"$tmp_out" 2>>"$err_file"
+                rc=$?
+              else
+                # 默认分支 fetch
+                sm_git "$dir" fetch --depth 50 origin >"$tmp_out" 2>>"$err_file"
+                rc=$?
+              fi
+              rm -f "$tmp_out"
+              if [[ $rc -eq 0 ]]; then
+                # 保留最后一次成功的简短 tail 作为调试（5 行以内）
+                tail -n 5 "$err_file" 2>/dev/null || true
+                return 0
+              fi
+              # Backoff: 3s / 6s
+              sleep $(( i * 3 ))
+            done
+            echo "  [fetch FAILED after ${max} retries]. stderr tail:"
+            tail -n 30 "$err_file" 2>/dev/null || true
+            return $rc
+          }
+
+          resolve_default_branch() {
+            local dir="$1" url="$2" out=""
+            # 最快、最不依赖网络：本地子模块是否已经注册了 refs/remotes/origin/HEAD
+            if out="$(sm_git "$dir" symbolic-ref refs/remotes/origin/HEAD 2>/dev/null)"; then
+              printf '%s' "${out#refs/remotes/origin/}"
+              return 0
+            fi
+            # 否则通过匿名 HTTPS ls-remote --symref 取服务端的 HEAD 映射（不 fetch 内容，更轻）
+            out="$(git ls-remote --symref "$url" HEAD 2>/dev/null \
+                  | awk '$2=="HEAD" && $1 ~ /^ref:/ { sub(/^ref: refs\/heads\//,"",$1); print $1; exit }')"
+            if [[ -n "$out" ]]; then
+              printf '%s' "$out"
+              return 0
+            fi
+            # 最后兜底：常见候选（master/main），若远程确实有其一则返回
+            for cand in master main; do
+              if git ls-remote --exit-code --heads "$url" "refs/heads/${cand}" >/dev/null 2>&1; then
+                printf '%s' "$cand"
+                return 0
+              fi
+            done
+            return 1
+          }
 
           IFS=',' read -ra SM_ARR <<< "$SELECTED_SM"
           for SM in "${SM_ARR[@]}"; do
@@ -150,15 +227,22 @@ jobs:
 
             # 1) 主仓库 index 上登记的 gitlink 指针（最稳定来源）
             BEFORE=""
-            if STAGE_LINE="$(git ls-files --stage -- "$SM" 2>/dev/null | head -n1)"; then
-              # format: <mode> <sha> <stage>\t<path>
+            STAGE_LINE="$(git ls-files --stage -- "$SM" 2>/dev/null || true)"
+            if [[ -n "$STAGE_LINE" ]]; then
+              # 用 awk 取 <mode> <sha> <stage>\t<path> 中的 <sha>
               BEFORE="$(awk '{print $2}' <<< "$STAGE_LINE")"
             fi
             if [[ -z "$BEFORE" ]]; then
-              BEFORE="$(git submodule status -- "$SM" | awk '{gsub(/^[-+U]/,"",$1); print $1}' | head -n1)" || true
+              BEFORE="$(git submodule status -- "$SM" 2>/dev/null | awk '{gsub(/^[-+U]/,"",$1); print $1; exit}')" || true
             fi
             if [[ -z "$BEFORE" ]]; then
               echo "::warning::无法读取 ${SM} 的 before 指针，跳过"
+              FAILED_ANY=1
+              if [[ -z "$FAILED_NAMES" ]]; then
+                FAILED_NAMES="${SM}(before-unknown)"
+              else
+                FAILED_NAMES="${FAILED_NAMES}, ${SM}(before-unknown)"
+              fi
               continue
             fi
             SHORT_BEFORE="${BEFORE:0:9}"
@@ -167,7 +251,6 @@ jobs:
             # 2) 子模块声明的 url / branch
             SM_CFG_KEY=""
             while IFS= read -r line; do
-              # submodule.<name>.path <value>
               cfg_path="${line#* }"
               if [[ "$cfg_path" == "$SM" ]]; then
                 SM_CFG_KEY="${line#submodule.}"
@@ -178,46 +261,73 @@ jobs:
             SM_URL="$(git config -f .gitmodules --get "submodule.${SM_CFG_KEY}.url" || true)"
             SM_BRANCH="$(git config -f .gitmodules --get "submodule.${SM_CFG_KEY}.branch" || true)"
 
-            # 3) Fetch 子模块（匿名 HTTPS），并确定目标 TARGET_SHA = origin/<SM_BRANCH> HEAD；
-            #    若 .gitmodules 没写 branch，就取子模块远程默认分支（通过 FETCH_HEAD 解析或 remote show）
+            # 3) Fetch 子模块（匿名 HTTPS，3 次重试）
             TARGET_SHA=""
             FETCH_OK=0
-            (set +e
-              if [[ -n "$SM_BRANCH" ]]; then
-                git -C "$SM" -c http.extraheader="" -c credential.helper="" \
-                  fetch --depth 50 origin "refs/heads/${SM_BRANCH}:refs/remotes/origin/${SM_BRANCH}" 2>&1 | tail -n 5
-                if [[ ${PIPESTATUS[0]} -eq 0 ]]; then
-                  TARGET_SHA="$(git -C "$SM" rev-parse --verify "refs/remotes/origin/${SM_BRANCH}" 2>/dev/null || true)"
+            SM_BRANCH_EFFECTIVE="$SM_BRANCH"
+            if [[ -n "$SM_BRANCH_EFFECTIVE" ]]; then
+              if run_fetch_with_retry "$SM" "$SM_URL" "refs/heads/${SM_BRANCH_EFFECTIVE}:refs/remotes/origin/${SM_BRANCH_EFFECTIVE}"; then
+                TARGET_SHA="$(sm_git "$SM" rev-parse --verify "refs/remotes/origin/${SM_BRANCH_EFFECTIVE}" 2>/dev/null || true)"
+                [[ -n "$TARGET_SHA" ]] && FETCH_OK=1
+              fi
+            fi
+            if [[ $FETCH_OK -eq 0 ]]; then
+              # 未声明 branch 或声明失败：拿远程默认分支名做精确 fetch（比裸 `fetch origin` 更稳定）
+              SM_BRANCH_EFFECTIVE="$(resolve_default_branch "$SM" "$SM_URL")" || SM_BRANCH_EFFECTIVE=""
+              if [[ -n "$SM_BRANCH_EFFECTIVE" ]]; then
+                echo "  -> resolved default branch '${SM_BRANCH_EFFECTIVE}' for ${SM}"
+                if run_fetch_with_retry "$SM" "$SM_URL" "refs/heads/${SM_BRANCH_EFFECTIVE}:refs/remotes/origin/${SM_BRANCH_EFFECTIVE}"; then
+                  TARGET_SHA="$(sm_git "$SM" rev-parse --verify "refs/remotes/origin/${SM_BRANCH_EFFECTIVE}" 2>/dev/null || true)"
                   [[ -n "$TARGET_SHA" ]] && FETCH_OK=1
                 fi
               fi
-              if [[ $FETCH_OK -eq 0 ]]; then
-                git -C "$SM" -c http.extraheader="" -c credential.helper="" \
-                  fetch --depth 50 origin 2>&1 | tail -n 5
-                if [[ ${PIPESTATUS[0]} -eq 0 ]]; then
-                  # FETCH_HEAD 第一行格式: <sha>\t\t<flag>\t<ref>
-                  TARGET_SHA="$(awk 'NR==1{print $1}' "$(git -C "$SM" rev-parse --git-dir)/FETCH_HEAD")"
+            fi
+            if [[ $FETCH_OK -eq 0 ]]; then
+              # 最后兜底：裸 fetch origin 并从 FETCH_HEAD 第一行解析（有些 repo/镜像不暴露 symref HEAD）
+              echo "  -> fallback: plain 'fetch origin' + FETCH_HEAD parse"
+              if run_fetch_with_retry "$SM" "$SM_URL" ""; then
+                FH="$(sm_git "$SM" rev-parse --git-dir)/FETCH_HEAD"
+                if [[ -s "$FH" ]]; then
+                  TARGET_SHA="$(awk 'NR==1{print $1}' "$FH")"
                   [[ -n "$TARGET_SHA" ]] && FETCH_OK=1
                 fi
               fi
-            ) || true
+            fi
 
             if [[ $FETCH_OK -eq 0 ]]; then
-              echo "::error::fetch failed for ${SM} (url=${SM_URL})"
-              exit 2
+              echo "::error::fetch failed for ${SM} (url=${SM_URL}, declared_branch=${SM_BRANCH:-<none>})"
+              FAILED_ANY=1
+              if [[ -z "$FAILED_NAMES" ]]; then
+                FAILED_NAMES="${SM}(fetch)"
+              else
+                FAILED_NAMES="${FAILED_NAMES}, ${SM}(fetch)"
+              fi
+              continue
             fi
             if [[ -z "$TARGET_SHA" ]]; then
-              echo "::error::target SHA not resolved for ${SM}"
-              exit 3
+              echo "::error::target SHA not resolved for ${SM} after successful fetch"
+              FAILED_ANY=1
+              if [[ -z "$FAILED_NAMES" ]]; then
+                FAILED_NAMES="${SM}(resolve)"
+              else
+                FAILED_NAMES="${FAILED_NAMES}, ${SM}(resolve)"
+              fi
+              continue
             fi
             SHORT_AFTER="${TARGET_SHA:0:9}"
 
-            # 4) Checkout submodule to latest tip (detached)
-            (set +e; git -C "$SM" checkout --detach "$TARGET_SHA" 2>&1 | tail -n 2) || true
+            # 4) Checkout submodule to latest tip (detached). 允许小概率 checkout warning 不中断。
+            CO_STDOUT="$(mktemp)"
+            if ! sm_git "$SM" checkout --detach "$TARGET_SHA" >"$CO_STDOUT" 2>&1; then
+              echo "::warning::checkout --detach for ${SM} printed non-zero exit, stderr/stdout last 5 lines:"
+              tail -n 5 "$CO_STDOUT"
+            fi
+            head -n 2 "$CO_STDOUT" || true
+            rm -f "$CO_STDOUT"
 
             # 5) Stage the gitlink pointer update
             BEFORE_STAGED="$BEFORE"
-            AFTER_STAGED="$(git -C "$SM" rev-parse HEAD 2>/dev/null || echo "$TARGET_SHA")"
+            AFTER_STAGED="$(sm_git "$SM" rev-parse HEAD 2>/dev/null || printf '%s' "$TARGET_SHA")"
             SHORT_AFTER_STAGED="${AFTER_STAGED:0:9}"
             git add -- "$SM"
 
@@ -236,30 +346,32 @@ jobs:
               UPDATED_PATHS="${UPDATED_PATHS} ${SM}"
             fi
 
-            # 7) Range log → markdown file (safely under LOG_DIR; don't pass through GITHUB_OUTPUT multiline)
+            # 7) Range log → markdown file (shell 截断 20 行，不使用 head -n | pipe 避免 pipefail 陷阱)
             LOG_FILE="${LOG_DIR}/$(echo "$SM" | tr '/' '_').log"
+            RANGE_LOG=""
+            if RANGE_TMP="$(sm_git "$SM" log --oneline --decorate "${BEFORE_STAGED}..${AFTER_STAGED}" 2>/dev/null)"; then
+              RANGE_LOG="$RANGE_TMP"
+            fi
+            if [[ -z "$RANGE_LOG" ]]; then
+              RANGE_TMP=""
+              if RANGE_TMP="$(sm_git "$SM" log --oneline -n 20 "${AFTER_STAGED}" 2>/dev/null)"; then
+                RANGE_LOG="$RANGE_TMP"
+              fi
+            fi
+            if [[ -z "$RANGE_LOG" ]]; then
+              RANGE_LOG="(no commits in range or shallow fetch incomplete)"
+            fi
             {
               echo "RANGE: ${SHORT_BEFORE}..${SHORT_AFTER_STAGED}"
               echo "URL: ${SM_URL}"
+              echo "BRANCH: ${SM_BRANCH_EFFECTIVE:-<unknown>}"
               echo
-              (set +e
-                RANGE_LOG=""
-                RANGE_LOG="$(git -C "$SM" log --oneline --decorate "${BEFORE_STAGED}..${AFTER_STAGED}" 2>/dev/null)"
-                if [[ $? -ne 0 || -z "$RANGE_LOG" ]]; then
-                  # history not fully shared/shallow: fall back to "last N commits on new tip"
-                  RANGE_LOG="$(git -C "$SM" log --oneline -n 20 "${AFTER_STAGED}" 2>/dev/null)" || true
-                fi
-                if [[ -z "$RANGE_LOG" ]]; then
-                  RANGE_LOG="(no commits in range or shallow fetch incomplete)"
-                fi
-                # head without pipefail trap
-                i=0
-                while IFS= read -r ln; do
-                  printf '%s\n' "$ln"
-                  i=$((i+1))
-                  [[ $i -ge 20 ]] && break
-                done <<< "$RANGE_LOG"
-              ) || true
+              i=0
+              while IFS= read -r ln; do
+                printf '%s\n' "$ln"
+                i=$((i+1))
+                [[ $i -ge 20 ]] && break
+              done <<< "$RANGE_LOG"
             } > "$LOG_FILE"
             echo "  -> 更新：${SHORT_BEFORE}..${SHORT_AFTER_STAGED}，日志写入 ${LOG_FILE}"
           done
@@ -267,22 +379,51 @@ jobs:
           echo "updated_any=${UPDATED_ANY}" >> "$GITHUB_OUTPUT"
           echo "updated_names=${UPDATED_NAMES}" >> "$GITHUB_OUTPUT"
           echo "updated_paths=${UPDATED_PATHS}" >> "$GITHUB_OUTPUT"
+          echo "failed_any=${FAILED_ANY}" >> "$GITHUB_OUTPUT"
+          echo "failed_names=${FAILED_NAMES}" >> "$GITHUB_OUTPUT"
+          echo "debugdir=${DEBUG_DIR}" >> "$GITHUB_OUTPUT"
+
+          if [[ $FAILED_ANY -eq 1 ]]; then
+            echo "::error::存在 fetch/解析失败的子模块：${FAILED_NAMES}。请查看日志 DEBUG_DIR=${DEBUG_DIR}"
+            exit 2
+          fi
 
       - name: Job summary (dry-run or no-change readable result)
         if: always()
-        shell: bash
         run: |
           set -eu
           LOG_DIR="${{ steps.changes.outputs.logdir }}"
+          DEBUG_DIR="${{ steps.changes.outputs.debugdir }}"
           TARGET="${{ steps.target.outputs.target }}"
           SELECTED="${{ steps.list.outputs.selected }}"
+          FAILED_ANY="${{ steps.changes.outputs.failed_any }}"
+          FAILED_NAMES="${{ steps.changes.outputs.failed_names }}"
           {
             echo "### Hourly submodule sync — target branch: \`${TARGET}\`"
             echo
             echo "- scope (selected): \`${SELECTED}\`"
             echo "- updated_any: ${{ steps.changes.outputs.updated_any }}"
             echo "- updated: \`${{ steps.changes.outputs.updated_names }}\`"
+            echo "- failed_any: \`${FAILED_ANY}\`"
+            echo "- failed: \`${FAILED_NAMES}\`"
+            [[ -n "$DEBUG_DIR" ]] && echo "- debugdir (runner local): \`${DEBUG_DIR}\`"
             echo
+            if [[ -n "$FAILED_NAMES" ]]; then
+              echo "<details><summary>failed submodules — per-repo stderr snippets</summary>"
+              echo
+              shopt -s nullglob
+              for f in "${DEBUG_DIR}"/*.err; do
+                [[ -s "$f" ]] || continue
+                title="$(basename "$f" .err)"
+                echo "#### ${title}"
+                echo '```'
+                tail -n 60 "$f" 2>/dev/null || true
+                echo '```'
+                echo
+              done
+              echo "</details>"
+              echo
+            fi
             if [[ -d "$LOG_DIR" ]]; then
               shopt -s nullglob
               for f in "$LOG_DIR"/*.log; do
@@ -298,7 +439,6 @@ jobs:
 
       - name: Create sync branch + commit + Pull Request
         if: steps.changes.outputs.updated_any == '1' && github.event.inputs.only_check != 'yes'
-        shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
           TARGET_BRANCH: ${{ steps.target.outputs.target }}
@@ -309,12 +449,14 @@ jobs:
           BASE_REPO: ${{ github.repository }}
         run: |
           set -eu
+          # 临时关闭 auto-gc，避免 PR 步骤的 fetch/push 触发后台 repack 与并发竞争
+          git config --global gc.auto 0 || true
           # 把 staged 的子模块指针在跨分支切换时携带；避免 checkout -b 后 index 丢失
-          git stash push -- $UPDATED_PATHS >/dev/null || true
+          git stash push -- $UPDATED_PATHS >/dev/null 2>&1 || true
           NEW_BRANCH="chore/submodule-sync-${STAMP}"
           git fetch --depth 1 origin "refs/heads/${TARGET_BRANCH}:refs/remotes/origin/${TARGET_BRANCH}"
           git checkout -b "$NEW_BRANCH" "origin/${TARGET_BRANCH}"
-          git stash pop >/dev/null || true
+          git stash pop >/dev/null 2>&1 || true
           git add -- $UPDATED_PATHS
 
           git config user.name  'github-actions[bot]'
@@ -338,19 +480,26 @@ jobs:
             shopt -s nullglob
             for f in "$LOG_DIR"/*.log; do
               title="$(basename "$f" .log)"
-              RANGE_LINE="$(head -n 1 "$f")"
+              RANGE_LINE="$(sed -n '1p' "$f")"
               URL_LINE="$(sed -n '2p' "$f")"
-              REST="$(sed -n '4,$p' "$f")"
+              BR_LINE="$(sed -n '3p' "$f")"
+              REST="$(sed -n '5,$p' "$f")"
               RANGE_SHORT="${RANGE_LINE#RANGE: }"
               URL_SHORT="${URL_LINE#URL: }"
+              BR_SHORT="${BR_LINE#BRANCH: }"
               SHORT_BEFORE="${RANGE_SHORT%%..*}"
               SHORT_AFTER="${RANGE_SHORT##*..}"
-              # commit 数量估算：取 REST 中去掉空行的行数
-              N="$(grep -cve '^$' <<< "$REST" 2>/dev/null || true)"
+              # commit 数量估算：取 REST 中去掉空行的行数（纯 shell 计数规避 grep -c 0 匹配返回 1 的陷阱）
+              N=0
+              while IFS= read -r _l; do
+                [[ -z "$_l" ]] && continue
+                N=$((N+1))
+              done <<< "$REST"
               N_DISP="${N:-unknown}"
               echo "### ${title}  \`${SHORT_BEFORE}\` → \`${SHORT_AFTER}\` (约 +${N_DISP} commits)"
               echo
               echo "- 子模块仓库: ${URL_SHORT}"
+              echo "- 跟踪分支: \`${BR_SHORT}\`"
               echo
               echo "<details><summary>前 20 条 commit 明细</summary>"
               echo
