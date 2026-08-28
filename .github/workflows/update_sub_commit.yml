@@ -20,24 +20,62 @@ jobs:
 
       - name: Update opendbc submodule
         run: |
-          git submodule update --init --remote opendbc
+          echo "=== Current submodule ==="
+          git submodule status
+
+          echo ""
+          echo "=== Fetch latest opendbc master ==="
+          git -C opendbc_repo fetch origin master
+
+          echo ""
+          echo "=== Remote master commit ==="
+          git -C opendbc_repo rev-parse origin/master
+
+          echo ""
+          echo "=== Current submodule commit ==="
+          git -C opendbc_repo rev-parse HEAD
+
+          echo ""
+          echo "=== Update submodule ==="
+          git -C opendbc_repo checkout master
+          git -C opendbc_repo reset --hard origin/master
+
+          echo ""
+          echo "=== New submodule commit ==="
+          git -C opendbc_repo rev-parse HEAD
 
       - name: Check submodule update
         run: |
+          echo "=== Git status ==="
           git status
+
+          echo ""
+          echo "=== Submodule diff ==="
           git diff --submodule
+
+          echo ""
+          echo "=== Main repo recorded commit ==="
+          git ls-tree HEAD opendbc_repo
+
+          echo ""
+          echo "=== Actual submodule commit ==="
+          git -C opendbc_repo rev-parse HEAD
 
       - name: Commit and push
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          git add opendbc
+          git add opendbc_repo
 
           if git diff --cached --quiet; then
             echo "opendbc is already up to date."
             exit 0
           fi
 
+          echo "=== Commit diff ==="
+          git diff --cached --submodule
+
           git commit -m "Update opendbc submodule"
+
           git push
