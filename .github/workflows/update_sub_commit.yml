@@ -1,26 +1,41 @@
-name: Auto Update Submodule
+name: Update opendbc submodule
+
 on:
   repository_dispatch:
-    types: [update-opendbc]   # 监听子模块发来的自定义事件
+    types:
+      - update-opendbc
 
 jobs:
-  update:
+  update-opendbc:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout parent repo
+      - name: Checkout sunnypilot
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets.PAT_TOKEN }}  # 重要：用 PAT，不能用默认 GITHUB_TOKEN（防止循环触发）
+          submodules: true
+          fetch-depth: 0
 
-      - name: Update submodule to latest
+      - name: Update opendbc submodule
         run: |
-          git submodule update --init --recursive --remote opendbc
-          # 或者指定分支：git submodule update --remote --recursive
+          git submodule update --init --remote opendbc
 
-      - name: Commit and push if changed
+      - name: Check submodule update
+        run: |
+          git status
+          git diff --submodule
+
+      - name: Commit and push
         run: |
           git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add opendbc  # 或 git add .
-          git diff --staged --quiet || git commit -m "chore: auto-update opendbc submodule [skip ci]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add opendbc
+
+          if git diff --cached --quiet; then
+            echo "opendbc is already up to date."
+            exit 0
+          fi
+
+          git commit -m "Update opendbc submodule"
           git push
