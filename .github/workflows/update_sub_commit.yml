@@ -5,6 +5,8 @@ on:
     types:
       - update-opendbc
 
+  workflow_dispatch:
+
 jobs:
   update-opendbc:
     runs-on: ubuntu-latest
