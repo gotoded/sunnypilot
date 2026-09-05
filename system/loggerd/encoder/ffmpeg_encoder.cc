@@ -48,9 +48,9 @@ FfmpegEncoder::~FfmpegEncoder() {
 }
 
 void FfmpegEncoder::encoder_open() {
-  auto codec_id = encoder_info.encode_type == cereal::EncodeIndex::Type::QCAMERA_H264
-                      ? AV_CODEC_ID_H264
-                      : AV_CODEC_ID_FFVHUFF;
+  auto codec_id = encoder_info.encode_type == cereal::EncodeIndex::Type::QCAMERA_H264 ? AV_CODEC_ID_H264
+                  : encoder_info.encode_type == cereal::EncodeIndex::Type::FULL_H_E_V_C ? AV_CODEC_ID_HEVC
+                  : AV_CODEC_ID_FFVHUFF;
   const AVCodec *codec = avcodec_find_encoder(codec_id);
 
   this->codec_ctx = avcodec_alloc_context3(codec);
@@ -59,6 +59,7 @@ void FfmpegEncoder::encoder_open() {
   this->codec_ctx->height = frame->height;
   this->codec_ctx->pix_fmt = AV_PIX_FMT_YUV420P;
   this->codec_ctx->time_base = (AVRational){ 1, encoder_info.fps };
+  this->codec_ctx->bit_rate = encoder_info.bitrate;
   int err = avcodec_open2(this->codec_ctx, codec, NULL);
   assert(err >= 0);
 
