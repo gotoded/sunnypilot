@@ -1,6 +1,7 @@
 #include "tools/cabana/mainwin.h"
 
 #include <algorithm>
+#include <cstdio>
 #include <iostream>
 #include <string>
 
@@ -54,7 +55,12 @@ MainWindow::MainWindow(AbstractStream *stream, const QString &dbc_file) : QMainW
     if (type == QtDebugMsg) return;
     emit static_main_win->showMessage(msg, 2000);
   });
-  installMessageHandler([](ReplyMsgType type, const std::string msg) { qInfo() << msg.c_str(); });
+  installMessageHandler([](ReplyMsgType type, const std::string msg) {
+    // Print replay logs to stderr so they are visible in the terminal.
+    // The previous qInfo() path was captured by qInstallMessageHandler and
+    // only flashed in the status bar for 2 seconds.
+    fprintf(stderr, "%s\n", msg.c_str());
+  });
 
   setStyleSheet(QString(R"(QMainWindow::separator {
     width: %1px; /* when vertical */
