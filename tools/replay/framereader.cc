@@ -271,20 +271,27 @@ bool VideoDecoder::initRkmppDecoder(const AVCodecParameters *codecpar) {
   switch (codecpar->codec_id) {
     case AV_CODEC_ID_HEVC: name = "hevc_rkmpp"; break;
     case AV_CODEC_ID_H264: name = "h264_rkmpp"; break;
-    default: return false;
+    default:
+      rWarning("rkmpp: unsupported codec id %d", codecpar->codec_id);
+      return false;
   }
 
   const AVCodec *decoder = avcodec_find_decoder_by_name(name);
-  if (!decoder) return false;
+  if (!decoder) {
+    rWarning("rkmpp: decoder '%s' not found in this FFmpeg build", name);
+    return false;
+  }
 
   AVCodecContext *ctx = avcodec_alloc_context3(decoder);
   if (!ctx || avcodec_parameters_to_context(ctx, codecpar) != 0) {
     if (ctx) avcodec_free_context(&ctx);
+    rWarning("rkmpp: failed to allocate or init codec context for %s", name);
     return false;
   }
 
   if (avcodec_open2(ctx, decoder, nullptr) < 0) {
     avcodec_free_context(&ctx);
+    rWarning("rkmpp: avcodec_open2 failed for %s", name);
     return false;
   }
 
