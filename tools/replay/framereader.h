@@ -47,8 +47,10 @@ public:
 
 private:
   bool initHardwareDecoder(AVHWDeviceType hw_device_type);
+  bool initRkmppDecoder(const AVCodecParameters *codecpar);
   AVFrame *decodeFrame(AVPacket *pkt);
   bool copyBuffer(AVFrame *f, VisionBuf *buf);
+  bool copyDrmPrimeBuffer(AVFrame *f, VisionBuf *buf);
 
   AVFrame *av_frame_, *hw_frame_;
   AVCodecContext *decoder_ctx = nullptr;
