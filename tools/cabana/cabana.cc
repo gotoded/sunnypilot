@@ -36,6 +36,7 @@ int main(int argc, char *argv[]) {
   cmd_parser.addOption({"data_dir", "local directory with routes", "data_dir"});
   cmd_parser.addOption({"no-vipc", "do not output video"});
   cmd_parser.addOption({"dbc", "dbc file to open", "dbc"});
+  cmd_parser.addOption({"no-hw-decoder", "disable hardware video decoding"});
   cmd_parser.process(app);
 
   AbstractStream *stream = nullptr;
@@ -59,6 +60,7 @@ int main(int argc, char *argv[]) {
     if (cmd_parser.isSet("qcam")) replay_flags |= REPLAY_FLAG_QCAMERA;
     if (cmd_parser.isSet("dcam")) replay_flags |= REPLAY_FLAG_DCAM;
     if (cmd_parser.isSet("no-vipc")) replay_flags |= REPLAY_FLAG_NO_VIPC;
+    if (cmd_parser.isSet("no-hw-decoder")) replay_flags |= REPLAY_FLAG_NO_HW_DECODER;
 
     const QStringList args = cmd_parser.positionalArguments();
     QString route;
