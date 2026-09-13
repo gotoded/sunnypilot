@@ -204,49 +204,58 @@ bool VideoDecoder::decode(FrameReader *reader, int idx, VisionBuf *buf) {
   }
   reader->prev_idx = idx;
 
-  bool result = false;
   AVPacket pkt;
+  bool got_frame = false;
   for (int i = from_idx; i <= idx; ++i) {
-    if (av_read_frame(reader->input_ctx, &pkt) == 0) {
-      AVFrame *f = decodeFrame(&pkt);
-      if (f && i == idx) {
-        result = copyBuffer(f, buf);
+    if (av_read_frame(reader->input_ctx, &pkt) != 0) {
+      break;
+    }
+
+    int ret = avcodec_send_packet(decoder_ctx, &pkt);
+    while (ret == AVERROR(EAGAIN)) {
+      // Decoder input buffer is full: drain a frame, then resend the same packet.
+      if (avcodec_receive_frame(decoder_ctx, av_frame_) != 0) {
+        break;
       }
-      av_packet_unref(&pkt);
+      got_frame = true;
+      ret = avcodec_send_packet(decoder_ctx, &pkt);
+    }
+    if (ret < 0) {
+      rError("Error sending a packet for decoding: %d", ret);
+    }
+    av_packet_unref(&pkt);
+
+    // Decoders (especially hevc_rkmpp) buffer several packets before emitting
+    // output, so drain every frame that is currently ready.
+    while (avcodec_receive_frame(decoder_ctx, av_frame_) == 0) {
+      got_frame = true;
     }
   }
-  return result;
+
+  if (!got_frame) {
+    return false;
+  }
+  AVFrame *f = convertToSoftwareFrame(av_frame_);
+  return f != nullptr && copyBuffer(f, buf);
 }
 
-AVFrame *VideoDecoder::decodeFrame(AVPacket *pkt) {
-  int ret = avcodec_send_packet(decoder_ctx, pkt);
-  if (ret < 0) {
-    rError("Error sending a packet for decoding: %d", ret);
-    return nullptr;
-  }
-
-  ret = avcodec_receive_frame(decoder_ctx, av_frame_);
-  if (ret != 0) {
-    rError("avcodec_receive_frame error: %d", ret);
-    return nullptr;
-  }
-
+AVFrame *VideoDecoder::convertToSoftwareFrame(AVFrame *f) {
   // rkmpp produces DRM_PRIME (dma-buf) frames. Convert them to a software frame
   // via FFmpeg's own transfer, which correctly maps the drm planes and yields NV12.
-  if (av_frame_->format == AV_PIX_FMT_DRM_PRIME) {
+  if (f->format == AV_PIX_FMT_DRM_PRIME) {
     av_frame_unref(hw_frame_);
-    if (av_hwframe_transfer_data(hw_frame_, av_frame_, 0) == 0) {
+    if (av_hwframe_transfer_data(hw_frame_, f, 0) == 0) {
       return hw_frame_;
     }
     rWarning("DRM_PRIME to system memory transfer failed; falling back to manual readback");
-    return av_frame_;
+    return f;
   }
 
-  if (av_frame_->format == hw_pix_fmt && av_hwframe_transfer_data(hw_frame_, av_frame_, 0) < 0) {
+  if (f->format == hw_pix_fmt && av_hwframe_transfer_data(hw_frame_, f, 0) < 0) {
     rError("error transferring frame data from GPU to CPU");
     return nullptr;
   }
-  return (av_frame_->format == hw_pix_fmt) ? hw_frame_ : av_frame_;
+  return (f->format == hw_pix_fmt) ? hw_frame_ : f;
 }
 
 bool VideoDecoder::copyBuffer(AVFrame *f, VisionBuf *buf) {
