@@ -231,8 +231,14 @@ AVFrame *VideoDecoder::decodeFrame(AVPacket *pkt) {
     return nullptr;
   }
 
-  // rkmpp produces DRM_PRIME (dma-buf) frames; readback happens in copyBuffer().
+  // rkmpp produces DRM_PRIME (dma-buf) frames. Convert them to a software frame
+  // via FFmpeg's own transfer, which correctly maps the drm planes and yields NV12.
   if (av_frame_->format == AV_PIX_FMT_DRM_PRIME) {
+    av_frame_unref(hw_frame_);
+    if (av_hwframe_transfer_data(hw_frame_, av_frame_, 0) == 0) {
+      return hw_frame_;
+    }
+    rWarning("DRM_PRIME to system memory transfer failed; falling back to manual readback");
     return av_frame_;
   }
 
@@ -246,6 +252,17 @@ AVFrame *VideoDecoder::decodeFrame(AVPacket *pkt) {
 bool VideoDecoder::copyBuffer(AVFrame *f, VisionBuf *buf) {
   if (f->format == AV_PIX_FMT_DRM_PRIME) {
     return copyDrmPrimeBuffer(f, buf);
+  }
+
+  if (f->format == AV_PIX_FMT_NV12) {
+    // NV12 (semi-planar) after hardware frame transfer: plane0 = Y, plane1 = interleaved UV.
+    for (int i = 0; i < height; i++) {
+      memcpy(buf->y + i * buf->stride, f->data[0] + i * f->linesize[0], width);
+    }
+    for (int i = 0; i < height / 2; i++) {
+      memcpy(buf->uv + i * buf->stride, f->data[1] + i * f->linesize[1], width);
+    }
+    return true;
   }
 
   if (hw_pix_fmt == HW_PIX_FMT) {
