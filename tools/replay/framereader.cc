@@ -120,6 +120,7 @@ bool FrameReader::get(int idx, VisionBuf *buf) {
 VideoDecoder::VideoDecoder() {
   av_frame_ = av_frame_alloc();
   hw_frame_ = av_frame_alloc();
+  last_frame_ = av_frame_alloc();
 }
 
 VideoDecoder::~VideoDecoder() {
@@ -127,6 +128,7 @@ VideoDecoder::~VideoDecoder() {
   if (decoder_ctx) avcodec_free_context(&decoder_ctx);
   av_frame_free(&av_frame_);
   av_frame_free(&hw_frame_);
+  av_frame_free(&last_frame_);
 }
 
 bool VideoDecoder::open(AVCodecParameters *codecpar, bool hw_decoder) {
@@ -206,6 +208,7 @@ bool VideoDecoder::decode(FrameReader *reader, int idx, VisionBuf *buf) {
 
   AVPacket pkt;
   bool got_frame = false;
+  av_frame_unref(last_frame_);
   for (int i = from_idx; i <= idx; ++i) {
     if (av_read_frame(reader->input_ctx, &pkt) != 0) {
       break;
@@ -217,6 +220,8 @@ bool VideoDecoder::decode(FrameReader *reader, int idx, VisionBuf *buf) {
       if (avcodec_receive_frame(decoder_ctx, av_frame_) != 0) {
         break;
       }
+      av_frame_unref(last_frame_);
+      av_frame_ref(last_frame_, av_frame_);
       got_frame = true;
       ret = avcodec_send_packet(decoder_ctx, &pkt);
     }
@@ -226,8 +231,12 @@ bool VideoDecoder::decode(FrameReader *reader, int idx, VisionBuf *buf) {
     av_packet_unref(&pkt);
 
     // Decoders (especially hevc_rkmpp) buffer several packets before emitting
-    // output, so drain every frame that is currently ready.
+    // output, so drain every frame that is currently ready. Keep a reference to
+    // the last decoded frame because the next avcodec_receive_frame() call
+    // unrefs av_frame_ even when it returns EAGAIN.
     while (avcodec_receive_frame(decoder_ctx, av_frame_) == 0) {
+      av_frame_unref(last_frame_);
+      av_frame_ref(last_frame_, av_frame_);
       got_frame = true;
     }
   }
@@ -235,7 +244,7 @@ bool VideoDecoder::decode(FrameReader *reader, int idx, VisionBuf *buf) {
   if (!got_frame) {
     return false;
   }
-  AVFrame *f = convertToSoftwareFrame(av_frame_);
+  AVFrame *f = convertToSoftwareFrame(last_frame_);
   return f != nullptr && copyBuffer(f, buf);
 }
 
@@ -251,11 +260,11 @@ AVFrame *VideoDecoder::convertToSoftwareFrame(AVFrame *f) {
     return f;
   }
 
-  if (f->format == hw_pix_fmt && av_hwframe_transfer_data(hw_frame_, f, 0) < 0) {
+  if (hw_pix_fmt != AV_PIX_FMT_NONE && f->format == hw_pix_fmt && av_hwframe_transfer_data(hw_frame_, f, 0) < 0) {
     rError("error transferring frame data from GPU to CPU");
     return nullptr;
   }
-  return (f->format == hw_pix_fmt) ? hw_frame_ : f;
+  return (hw_pix_fmt != AV_PIX_FMT_NONE && f->format == hw_pix_fmt) ? hw_frame_ : f;
 }
 
 bool VideoDecoder::copyBuffer(AVFrame *f, VisionBuf *buf) {

@@ -52,7 +52,7 @@ private:
   bool copyBuffer(AVFrame *f, VisionBuf *buf);
   bool copyDrmPrimeBuffer(AVFrame *f, VisionBuf *buf);
 
-  AVFrame *av_frame_, *hw_frame_;
+  AVFrame *av_frame_, *hw_frame_, *last_frame_;
   AVCodecContext *decoder_ctx = nullptr;
   AVPixelFormat hw_pix_fmt = AV_PIX_FMT_NONE;
   AVBufferRef *hw_device_ctx = nullptr;
