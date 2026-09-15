@@ -7,6 +7,8 @@
 #endif
 
 #include <cmath>
+#include <cstdio>
+
 #include <QApplication>
 
 namespace {
@@ -102,9 +104,10 @@ void CameraWidget::initializeGL() {
   const char *gl_renderer = reinterpret_cast<const char *>(glGetString(GL_RENDERER));
   const char *gl_vendor = reinterpret_cast<const char *>(glGetString(GL_VENDOR));
   const char *gl_version = reinterpret_cast<const char *>(glGetString(GL_VERSION));
-  qWarning() << "GL renderer:" << (gl_renderer ? gl_renderer : "null")
-             << "| vendor:" << (gl_vendor ? gl_vendor : "null")
-             << "| version:" << (gl_version ? gl_version : "null");
+  fprintf(stderr, "GL renderer: %s | vendor: %s | version: %s\n",
+          gl_renderer ? gl_renderer : "null",
+          gl_vendor ? gl_vendor : "null",
+          gl_version ? gl_version : "null");
 
   program = std::make_unique<QOpenGLShaderProgram>(context());
   bool ret = program->addShaderFromSourceCode(QOpenGLShader::Vertex, frame_vertex_shader);
