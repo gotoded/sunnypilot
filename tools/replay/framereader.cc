@@ -235,10 +235,12 @@ bool VideoDecoder::decode(FrameReader *reader, int idx, VisionBuf *buf) {
 
   // Feed a few packets beyond the requested frame so the decoder pipeline stays
   // full; drained frames are cached by their presentation index.
+  bool eof = false;
   int feed_upto = std::min(idx + LOOKAHEAD, (int)reader->packets_info.size() - 1);
   while (reader->next_feed_idx <= feed_upto) {
     AVPacket pkt;
     if (av_read_frame(reader->input_ctx, &pkt) != 0) {
+      eof = true;
       break;
     }
 
@@ -264,6 +266,18 @@ bool VideoDecoder::decode(FrameReader *reader, int idx, VisionBuf *buf) {
   reader->prev_idx = idx;
 
   auto it = reader->decoded_cache.find(idx);
+  if (it == reader->decoded_cache.end()) {
+    // At the end of the packet stream hevc_rkmpp still buffers a few frames
+    // internally; flush the decoder to emit the tail instead of dropping it.
+    bool exhausted = eof || reader->next_feed_idx > (int)reader->packets_info.size() - 1;
+    if (exhausted) {
+      avcodec_send_packet(decoder_ctx, nullptr);
+      while (avcodec_receive_frame(decoder_ctx, av_frame_) == 0) {
+        cache_frame();
+      }
+      it = reader->decoded_cache.find(idx);
+    }
+  }
   if (it == reader->decoded_cache.end()) {
     rWarning("decode[%d]: no frame produced (next_output=%d next_feed=%d)", idx, reader->next_output_idx, reader->next_feed_idx);
     return false;
