@@ -1,5 +1,6 @@
 #include "tools/replay/framereader.h"
 
+#include <algorithm>
 #include <map>
 #include <memory>
 #include <tuple>
@@ -69,6 +70,10 @@ FrameReader::FrameReader() {
 }
 
 FrameReader::~FrameReader() {
+  for (auto &kv : decoded_cache) {
+    av_frame_free(&kv.second);
+  }
+  decoded_cache.clear();
   if (input_ctx) avformat_close_input(&input_ctx);
 }
 
@@ -120,7 +125,6 @@ bool FrameReader::get(int idx, VisionBuf *buf) {
 VideoDecoder::VideoDecoder() {
   av_frame_ = av_frame_alloc();
   hw_frame_ = av_frame_alloc();
-  last_frame_ = av_frame_alloc();
 }
 
 VideoDecoder::~VideoDecoder() {
@@ -128,7 +132,6 @@ VideoDecoder::~VideoDecoder() {
   if (decoder_ctx) avcodec_free_context(&decoder_ctx);
   av_frame_free(&av_frame_);
   av_frame_free(&hw_frame_);
-  av_frame_free(&last_frame_);
 }
 
 bool VideoDecoder::open(AVCodecParameters *codecpar, bool hw_decoder) {
@@ -186,9 +189,32 @@ bool VideoDecoder::initHardwareDecoder(AVHWDeviceType hw_device_type) {
 }
 
 bool VideoDecoder::decode(FrameReader *reader, int idx, VisionBuf *buf) {
-  int from_idx = idx;
-  if (idx != reader->prev_idx + 1) {
-    // seeking to the nearest key frame
+  if (idx < 0 || idx >= (int)reader->packets_info.size()) {
+    return false;
+  }
+  constexpr int LOOKAHEAD = 16;
+
+  auto cache_frame = [&]() {
+    AVFrame *cached = av_frame_alloc();
+    if (cached) {
+      av_frame_ref(cached, av_frame_);
+      reader->decoded_cache[reader->next_output_idx++] = cached;
+    } else {
+      ++reader->next_output_idx;
+    }
+  };
+
+  // On a seek, non-sequential jump, or the first decode of a segment, drop
+  // cached frames and restart from the nearest key frame. Sequential playback
+  // keeps decoder state so the async RKMPP pipeline can stay ahead of the playhead.
+  if (idx != reader->prev_idx + 1 || reader->needs_flush) {
+    reader->needs_flush = false;
+    for (auto &kv : reader->decoded_cache) {
+      av_frame_free(&kv.second);
+    }
+    reader->decoded_cache.clear();
+
+    int from_idx = idx;
     for (int i = idx; i >= 0; --i) {
       if (reader->packets_info[i].flags & AV_PKT_FLAG_KEY) {
         from_idx = i;
@@ -197,58 +223,62 @@ bool VideoDecoder::decode(FrameReader *reader, int idx, VisionBuf *buf) {
     }
 
     auto pos = reader->packets_info[from_idx].pos;
-    int ret = avformat_seek_file(reader->input_ctx, 0, pos, pos, pos, AVSEEK_FLAG_BYTE);
-    if (ret < 0) {
-      rError("Failed to seek to byte position %lld: %d", pos, AVERROR(ret));
+    if (avformat_seek_file(reader->input_ctx, 0, pos, pos, pos, AVSEEK_FLAG_BYTE) < 0) {
+      rError("Failed to seek to byte position %lld", pos);
       return false;
     }
     avcodec_flush_buffers(decoder_ctx);
-  }
-  reader->prev_idx = idx;
 
-  AVPacket pkt;
-  bool got_frame = false;
-  av_frame_unref(last_frame_);
-  for (int i = from_idx; i <= idx; ++i) {
-    int read_ret = av_read_frame(reader->input_ctx, &pkt);
-    if (read_ret != 0) {
-      rWarning("decode[%d]: av_read_frame failed ret=%d (i=%d from=%d n=%zu)", idx, read_ret, i, from_idx, reader->packets_info.size());
+    reader->next_feed_idx = from_idx;
+    reader->next_output_idx = from_idx;
+  }
+
+  // Feed a few packets beyond the requested frame so the decoder pipeline stays
+  // full; drained frames are cached by their presentation index.
+  int feed_upto = std::min(idx + LOOKAHEAD, (int)reader->packets_info.size() - 1);
+  while (reader->next_feed_idx <= feed_upto) {
+    AVPacket pkt;
+    if (av_read_frame(reader->input_ctx, &pkt) != 0) {
       break;
     }
 
     int ret = avcodec_send_packet(decoder_ctx, &pkt);
     while (ret == AVERROR(EAGAIN)) {
-      // Decoder input buffer is full: drain a frame, then resend the same packet.
       if (avcodec_receive_frame(decoder_ctx, av_frame_) != 0) {
         break;
       }
-      av_frame_unref(last_frame_);
-      av_frame_ref(last_frame_, av_frame_);
-      got_frame = true;
+      cache_frame();
       ret = avcodec_send_packet(decoder_ctx, &pkt);
     }
     if (ret < 0) {
       rError("Error sending a packet for decoding: %d", ret);
     }
     av_packet_unref(&pkt);
+    ++reader->next_feed_idx;
 
-    // Decoders (especially hevc_rkmpp) buffer several packets before emitting
-    // output, so drain every frame that is currently ready. Keep a reference to
-    // the last decoded frame because the next avcodec_receive_frame() call
-    // unrefs av_frame_ even when it returns EAGAIN.
     while (avcodec_receive_frame(decoder_ctx, av_frame_) == 0) {
-      av_frame_unref(last_frame_);
-      av_frame_ref(last_frame_, av_frame_);
-      got_frame = true;
+      cache_frame();
     }
   }
 
-  if (!got_frame) {
-    rWarning("decode[%d]: no frame produced (from_idx=%d)", idx, from_idx);
+  reader->prev_idx = idx;
+
+  auto it = reader->decoded_cache.find(idx);
+  if (it == reader->decoded_cache.end()) {
+    rWarning("decode[%d]: no frame produced (next_output=%d next_feed=%d)", idx, reader->next_output_idx, reader->next_feed_idx);
     return false;
   }
-  AVFrame *f = convertToSoftwareFrame(last_frame_);
-  return f != nullptr && copyBuffer(f, buf);
+
+  AVFrame *f = convertToSoftwareFrame(it->second);
+  bool ok = f != nullptr && copyBuffer(f, buf);
+
+  // Release frames behind the playhead so the MPP dma-buf pool isn't exhausted.
+  auto drop = reader->decoded_cache.begin();
+  while (drop != reader->decoded_cache.end() && drop->first < idx) {
+    av_frame_free(&drop->second);
+    drop = reader->decoded_cache.erase(drop);
+  }
+  return ok;
 }
 
 AVFrame *VideoDecoder::convertToSoftwareFrame(AVFrame *f) {

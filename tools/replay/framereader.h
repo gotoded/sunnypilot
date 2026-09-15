@@ -1,5 +1,6 @@
 #pragma once
 
+#include <map>
 #include <string>
 #include <vector>
 
@@ -34,6 +35,15 @@ public:
     int64_t pos;
   };
   std::vector<PacketInfo> packets_info;
+
+  // Decoded-frame cache keyed by presentation index. Keeps the async RKMPP
+  // pipeline running ahead of the playhead instead of blocking per frame.
+  std::map<int, AVFrame *> decoded_cache;
+  int next_feed_idx = 0;
+  int next_output_idx = 0;
+  // Force a decoder flush on the first decode so a shared VideoDecoder doesn't
+  // carry leftover state from the previous segment's stream.
+  bool needs_flush = true;
 };
 
 
@@ -52,7 +62,7 @@ private:
   bool copyBuffer(AVFrame *f, VisionBuf *buf);
   bool copyDrmPrimeBuffer(AVFrame *f, VisionBuf *buf);
 
-  AVFrame *av_frame_, *hw_frame_, *last_frame_;
+  AVFrame *av_frame_, *hw_frame_;
   AVCodecContext *decoder_ctx = nullptr;
   AVPixelFormat hw_pix_fmt = AV_PIX_FMT_NONE;
   AVBufferRef *hw_device_ctx = nullptr;
