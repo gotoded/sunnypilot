@@ -210,7 +210,9 @@ bool VideoDecoder::decode(FrameReader *reader, int idx, VisionBuf *buf) {
   bool got_frame = false;
   av_frame_unref(last_frame_);
   for (int i = from_idx; i <= idx; ++i) {
-    if (av_read_frame(reader->input_ctx, &pkt) != 0) {
+    int read_ret = av_read_frame(reader->input_ctx, &pkt);
+    if (read_ret != 0) {
+      rWarning("decode[%d]: av_read_frame failed ret=%d (i=%d from=%d n=%zu)", idx, read_ret, i, from_idx, reader->packets_info.size());
       break;
     }
 
@@ -242,6 +244,7 @@ bool VideoDecoder::decode(FrameReader *reader, int idx, VisionBuf *buf) {
   }
 
   if (!got_frame) {
+    rWarning("decode[%d]: no frame produced (from_idx=%d)", idx, from_idx);
     return false;
   }
   AVFrame *f = convertToSoftwareFrame(last_frame_);
