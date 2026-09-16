@@ -23,8 +23,10 @@
 // underlying dma-buf file descriptors.
 #ifdef __linux__
 #include <sys/mman.h>
+#include <sys/ioctl.h>
 
 #include <libavutil/hwcontext_drm.h>
+#include <linux/dma-buf.h>
 
 #define RKMPP_ENABLED 1
 #endif
@@ -283,7 +285,9 @@ bool VideoDecoder::decode(FrameReader *reader, int idx, VisionBuf *buf) {
     return false;
   }
 
-  AVFrame *f = convertToSoftwareFrame(it->second);
+  // DRM_PRIME (RKMPP) frames read back directly via mmap, skipping the extra
+  // GPU->CPU transfer; other formats keep the existing transfer path.
+  AVFrame *f = (it->second->format == AV_PIX_FMT_DRM_PRIME) ? it->second : convertToSoftwareFrame(it->second);
   bool ok = f != nullptr && copyBuffer(f, buf);
 
   // Release frames behind the playhead so the MPP dma-buf pool isn't exhausted.
@@ -407,6 +411,10 @@ bool VideoDecoder::copyDrmPrimeBuffer(AVFrame *f, VisionBuf *buf) {
     const AVDRMPlaneDescriptor *plane = &layer->planes[plane_idx];
     const AVDRMObjectDescriptor *obj = &desc->objects[plane->object_index];
 
+    struct dma_buf_sync sync_start = {};
+    sync_start.flags = DMA_BUF_SYNC_START | DMA_BUF_SYNC_READ;
+    ioctl(obj->fd, DMA_BUF_IOCTL_SYNC, &sync_start);
+
     void *map = mmap(nullptr, (size_t)obj->size, PROT_READ, MAP_SHARED, obj->fd, 0);
     if (map == MAP_FAILED) {
       rError("Failed to mmap MPP dma-buf (fd=%d, size=%ld)", obj->fd, (long)obj->size);
@@ -418,6 +426,10 @@ bool VideoDecoder::copyDrmPrimeBuffer(AVFrame *f, VisionBuf *buf) {
       memcpy(dst + row * buf->stride, src + row * plane->pitch, width);
     }
     munmap(map, obj->size);
+
+    struct dma_buf_sync sync_end = {};
+    sync_end.flags = DMA_BUF_SYNC_END | DMA_BUF_SYNC_READ;
+    ioctl(obj->fd, DMA_BUF_IOCTL_SYNC, &sync_end);
     return true;
   };
 
