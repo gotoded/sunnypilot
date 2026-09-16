@@ -7,7 +7,7 @@
   branch = master
 [submodule "msgq"]
   path = msgq_repo
-  url = https://github.com/sunnypilot/msgq.git
+  url = https://github.com/gotoded/msgq.git
 [submodule "rednose_repo"]
   path = rednose_repo
   url = https://github.com/commaai/rednose.git
