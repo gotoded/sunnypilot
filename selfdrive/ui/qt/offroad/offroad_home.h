@@ -9,7 +9,6 @@
 
 #include "common/params.h"
 #include "selfdrive/ui/qt/body.h"
-#include "selfdrive/ui/qt/widgets/cameraview.h"
 #include "selfdrive/ui/qt/widgets/offroad_alerts.h"
 
 #ifdef SUNNYPILOT
@@ -48,7 +47,6 @@ private:
 
   Params params;
 
-  CameraWidget* camera_widget;
   QTimer* timer;
   ElidedLabel* version;
   QStackedLayout* center_layout;

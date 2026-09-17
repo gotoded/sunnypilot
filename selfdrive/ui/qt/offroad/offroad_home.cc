@@ -11,25 +11,11 @@
 #include "selfdrive/ui/qt/offroad/experimental_mode.h"
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/widgets/prime.h"
-#include "system/hardware/hw.h"
 
 // OffroadHome: the offroad home page
 
 OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
-  // 根布局：road 摄像头背景 + 内容叠加
-  QStackedLayout* root_layout = new QStackedLayout(this);
-  root_layout->setStackingMode(QStackedLayout::StackAll);
-
-  // 仅 PC/开发模式显示摄像头背景（webcam 画面）；真车上 offroad 时 camerad 不运行，
-  // 避免无谓的 visionipc 重连与 GL 资源消耗
-  if (Hardware::PC()) {
-    camera_widget = new CameraWidget("camerad", VISION_STREAM_ROAD, this);
-    camera_widget->setAttribute(Qt::WA_TransparentForMouseEvents);
-    root_layout->addWidget(camera_widget);
-  }
-
-  QWidget* content_widget = new QWidget(this);
-  QVBoxLayout* main_layout = new QVBoxLayout(content_widget);
+  QVBoxLayout* main_layout = new QVBoxLayout(this);
   main_layout->setContentsMargins(ui_scale::px_w(19), ui_scale::px_h(21), ui_scale::px_w(19), ui_scale::px_h(21));
 
   // top header
@@ -137,8 +123,6 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
       font-size: %5px;
     }
   )").arg(ui_scale::px_h(8)).arg(ui_scale::px_w(15)).arg(ui_scale::px_w(3)).arg(ui_scale::px_w(18)).arg(ui_scale::px_w(26)));
-
-  root_layout->addWidget(content_widget);
 }
 
 void OffroadHome::showEvent(QShowEvent *event) {
